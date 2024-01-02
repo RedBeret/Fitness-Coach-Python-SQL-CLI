@@ -1,6 +1,32 @@
 # lib/cli.py
+import random
+
+from tabulate import tabulate
+
+from .helpers import (
+    create_exercise,
+    create_user,
+    create_workout,
+    delete_exercise,
+    delete_user,
+    delete_workout,
+    display_workout_plan,
+    exit_program,
+    generate_random_workout,
+    get_duration_minutes,
+    get_workout_type,
+    list_exercises,
+    list_users,
+    list_workouts,
+    update_exercise,
+    update_user,
+    update_workout,
+)
+
+# Adding sections to seperate the functions
 
 
+# --- User Management Functions ---
 def user_management_menu():
     while True:
         print("\nUser Management")
@@ -11,31 +37,27 @@ def user_management_menu():
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
-            user_management_menu()
-            # create_user()
+            create_user()
         elif choice == "2":
-            user_management_menu()
-            # list_users()
+            list_users()
         elif choice == "3":
-            user_management_menu()
-            # update_user()
+            update_user()
         elif choice == "4":
-            user_management_menu()
-            # delete_user()
+            delete_user()
         elif choice == "0":
-            main_menu()
+            return
         else:
             print("Invalid choice. Please try again.")
-            user_management_menu()
 
 
+# --- Workout Management Functions ---
 def workout_management_menu():
     while True:
-        print("\nworkout Management")
-        print("1: Create New workout")
-        print("2: View All workouts")
-        print("3: Update workout")
-        print("4: Delete workout")
+        print("\nWorkout Management")
+        print("1: Create New Workout")
+        print("2: View All Workouts")
+        print("3: Update Workout")
+        print("4: Delete Workout")
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
@@ -57,13 +79,14 @@ def workout_management_menu():
             workout_management_menu()
 
 
+# --- Exercise Management Functions ---
 def exercise_management_menu():
     while True:
-        print("\nexercise Management")
-        print("1: Create New exercise")
-        print("2: View All exercises")
-        print("3: Update exercise")
-        print("4: Delete exercise")
+        print("\nExercise Management")
+        print("1: Create New Exercise")
+        print("2: View All Exercises")
+        print("3: Update Exercise")
+        print("4: Delete Exercise")
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
@@ -85,19 +108,70 @@ def exercise_management_menu():
             exercise_management_menu()
 
 
+# --- Quick Start Workout ---
+def quick_start_workout():
+    print("\nQuick Start Workout")
+    name = input("Enter your name: ")
+
+    workout_type = get_workout_type()
+    duration_minutes = get_duration_minutes()
+
+    # Just a placeholder for now to not error out and cycle.
+    # Total time (mins, rounded) = round(((sets * reps * time_per_rep_3sec) + ((sets - 1) * rest_between_sets_45sec) + setup_time_10sec) / 60)
+
+    exercises = [
+        {"Exercise Name": "Push-Ups", "Sets": 3, "Reps": 12, "Duration (Min)": 3},
+        {"Exercise Name": "Squats", "Sets": 3, "Reps": 10, "Duration (Min)": 3},
+    ]
+
+    workout_plan = generate_random_workout(exercises, duration_minutes)
+    if workout_plan:
+        display_workout_plan(workout_plan)
+    else:
+        print("Unable to generate a workout plan for the specified duration.")
+
+    while True:
+        print("\nChoose an option:")
+        print("1: Generate a Different Workout")
+        print("2: Return to Main Menu")
+        choice = input("Please choose an option: ")
+
+        if choice == "1":
+            workout_plan = generate_random_workout(exercises, duration_minutes)
+            if workout_plan:
+                display_workout_plan(workout_plan)
+            else:
+                print("Unable to generate a workout plan for the specified duration.")
+        elif choice == "2":
+            main_menu()
+        else:
+            print("Invalid choice. Please try again.")
+
+
 def main_menu():
+    print(
+        """  GGGG   Y   Y  M   M
+ G       Y   Y  MM MM
+ G  GG    Y Y   M M M
+ G   G     Y    M   M
+  GGG      Y    M   M
+"""
+    )
     while True:
         print("\nWelcome to the Fitness App CLI")
-        print("1: User Management")
-        print("2: Workout Management")
-        print("3: Exercise Management")
+        print("1: Quick Start Workout")
+        print("2: User Management")
+        print("3: Workout Management")
+        print("4: Exercise Management")
         print("0: Exit")
         choice = input("Please choose an option: ")
         if choice == "1":
-            user_management_menu()
+            quick_start_workout()
         elif choice == "2":
-            workout_management_menu()
+            user_management_menu()
         elif choice == "3":
+            workout_management_menu()
+        elif choice == "4":
             exercise_management_menu()
         elif choice == "0":
             exit_program()
@@ -106,4 +180,4 @@ def main_menu():
 
 
 if __name__ == "__main__":
-    main()
+    main_menu()
