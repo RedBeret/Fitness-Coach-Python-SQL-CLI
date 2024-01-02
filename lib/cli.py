@@ -23,7 +23,37 @@ from .helpers import (
     update_workout,
 )
 
+
 # Adding sections to seperate the functions
+def main_menu():
+    print(
+        """  GGGG   Y   Y  M   M
+ G       Y   Y  MM MM
+ G  GG    Y Y   M M M
+ G   G     Y    M   M
+  GGG      Y    M   M
+"""
+    )
+    while True:
+        print("\nWelcome to the Fitness App CLI")
+        print("1: Quick Start Workout")
+        print("2: User Management")
+        print("3: Workout Management")
+        print("4: Exercise Management")
+        print("0: Exit")
+        choice = input("Please choose an option: ")
+        if choice == "1":
+            quick_start_workout()
+        elif choice == "2":
+            user_management_menu()
+        elif choice == "3":
+            workout_management_menu()
+        elif choice == "4":
+            exercise_management_menu()
+        elif choice == "0":
+            exit_program()
+        else:
+            print("Invalid choice. Please try again.")
 
 
 # --- User Management Functions ---
@@ -62,16 +92,16 @@ def workout_management_menu():
         choice = input("Please choose an option: ")
         if choice == "1":
             workout_management_menu()
-            # create_workout()
+            create_workout()
         elif choice == "2":
             workout_management_menu()
-            # list_workouts()
+            list_workouts()
         elif choice == "3":
             workout_management_menu()
-            # update_workout()
+            update_workout()
         elif choice == "4":
             workout_management_menu()
-            # delete_workout()
+            delete_workout()
         elif choice == "0":
             main_menu()
         else:
@@ -91,16 +121,16 @@ def exercise_management_menu():
         choice = input("Please choose an option: ")
         if choice == "1":
             exercise_management_menu()
-            # create_exercise()
+            create_exercise()
         elif choice == "2":
             exercise_management_menu()
-            # list_exercises()
+            list_exercises()
         elif choice == "3":
             exercise_management_menu()
-            # update_exercise()
+            update_exercise()
         elif choice == "4":
             exercise_management_menu()
-            # delete_exercise()
+            delete_exercise()
         elif choice == "0":
             main_menu()
         else:
@@ -109,11 +139,20 @@ def exercise_management_menu():
 
 
 # --- Quick Start Workout ---
+
+
 def quick_start_workout():
     print("\nQuick Start Workout")
-    name = input("Enter your name: ")
-
+    # Get user input for name in alphabetical characters only
+    while True:
+        name = input("Enter your name: ")
+        if any(not (char.isalpha() or char == " ") for char in name):
+            print("Invalid name. Names should only contain letters and spaces.")
+        else:
+            break
+    # gets workout type from user
     workout_type = get_workout_type()
+    # gets duration from user
     duration_minutes = get_duration_minutes()
 
     # Just a placeholder for now to not error out and cycle.
@@ -144,37 +183,6 @@ def quick_start_workout():
                 print("Unable to generate a workout plan for the specified duration.")
         elif choice == "2":
             main_menu()
-        else:
-            print("Invalid choice. Please try again.")
-
-
-def main_menu():
-    print(
-        """  GGGG   Y   Y  M   M
- G       Y   Y  MM MM
- G  GG    Y Y   M M M
- G   G     Y    M   M
-  GGG      Y    M   M
-"""
-    )
-    while True:
-        print("\nWelcome to the Fitness App CLI")
-        print("1: Quick Start Workout")
-        print("2: User Management")
-        print("3: Workout Management")
-        print("4: Exercise Management")
-        print("0: Exit")
-        choice = input("Please choose an option: ")
-        if choice == "1":
-            quick_start_workout()
-        elif choice == "2":
-            user_management_menu()
-        elif choice == "3":
-            workout_management_menu()
-        elif choice == "4":
-            exercise_management_menu()
-        elif choice == "0":
-            exit_program()
         else:
             print("Invalid choice. Please try again.")
 
