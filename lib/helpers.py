@@ -6,6 +6,7 @@ from tabulate import tabulate
 
 # User Management Functions
 def create_user():
+    name = input("Enter the new user's name: ")
     pass
 
 
@@ -14,15 +15,22 @@ def list_users():
 
 
 def update_user():
+    user_id = input("Enter the user's ID to update: ")
+
     pass
 
 
 def delete_user():
+    user_id = input("Enter the user's ID to delete: ")
+
     pass
 
 
 # Workout Management Functions
 def create_workout():
+    workout_type = get_workout_type()
+    duration = int(input("Enter the workout duration in minutes: "))
+    workout = Workout(workout_type, duration)
     pass
 
 
@@ -40,6 +48,12 @@ def delete_workout():
 
 # Exercise Management Functions
 def create_exercise():
+    exercise_name = input("Enter the exercise name: ")
+    sets = int(input("Enter the number of sets: "))
+    reps = int(input("Enter the number of reps: "))
+    time = int(input("Enter the exercise duration (in seconds): "))
+    category = get_workout_type()
+
     pass
 
 
@@ -76,10 +90,12 @@ def get_workout_type():
 
 def get_duration_minutes():
     while True:
-        try:
-            return int(input("Enter the workout duration in minutes: "))
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+        duration = input("Enter the workout duration in minutes (whole numbers only): ")
+
+        if duration.isdigit() and int(duration) > 0:
+            return int(duration)
+        else:
+            print("Invalid input. Please enter a positive whole number.")
 
 
 def display_workout_plan(workout_plan):
@@ -112,6 +128,7 @@ def generate_random_workout(exercises, duration_minutes):
                 workout_plan.append(exercise)
                 current_duration += exercise_duration
                 added_exercise = True
+                break
         if not added_exercise:
             break
     return workout_plan
