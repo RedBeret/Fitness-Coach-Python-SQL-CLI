@@ -79,6 +79,8 @@ class Workout:
     def goal(self, goal):
         if not isinstance(goal, str):
             raise TypeError("Goal must be a string")
+        elif goal not in ["Strength", "Cardio", "Hybrid"]:
+            raise ValueError("Goal must be either 'Strength', 'Cardio', or 'Hybrid'")
         else:
             self._goal = goal
 
