@@ -4,12 +4,26 @@ from models.__init__ import CONN, CURSOR
 class Exercise:
     all = []
 
-    def __init__(self, name, description, instructions, id=None):
+    def __init__(
+        self,
+        name,
+        description,
+        instructions,
+        muscle_group,
+        sets,
+        reps_per_set,
+        duration_minutes,
+        id=None,
+    ):
         self.name = name
         self.description = description
         self.instructions = instructions
+        self.muscle_group = muscle_group
+        self.sets = sets
+        self.reps_per_set = reps_per_set
+        self.duration_minutes = duration_minutes
         self.id = id
-        self.all.append(self)
+        self.all[self.id] = self
 
     @property
     def name(self):
@@ -56,17 +70,75 @@ class Exercise:
         else:
             self._instructions = instructions
 
+    @property
+    def muscle_group(self):
+        return self._muscle_group
+
+    @muscle_group.setter
+    def muscle_group(self, muscle_group):
+        if not isinstance(muscle_group, str):
+            raise TypeError("Muscle group must be a string")
+        elif not len(muscle_group) > 0:
+            raise ValueError("Muscle group cannot be empty")
+        else:
+            self._muscle_group = muscle_group
+
+    @property
+    def sets(self):
+        return self._sets
+
+    @sets.setter
+    def sets(self, sets):
+        if not isinstance(sets, int):
+            raise TypeError("Sets must be an integer")
+        elif sets < 0:
+            raise ValueError("Sets cannot be negative")
+        else:
+            self._sets = sets
+
+    @property
+    def reps_per_set(self):
+        return self._reps_per_set
+
+    @reps_per_set.setter
+    def reps_per_set(self, reps_per_set):
+        if not isinstance(reps_per_set, int):
+            raise TypeError("Reps per set must be an integer")
+        elif reps_per_set < 0:
+            raise ValueError("Reps per set cannot be negative")
+        else:
+            self._reps_per_set = reps_per_set
+
+    @property
+    def duration_minutes(self):
+        return self._duration_minutes
+
+    @duration_minutes.setter
+    def duration_minutes(self, duration_minutes):
+        if not isinstance(duration_minutes, int):
+            raise TypeError("Duration minutes must be an integer")
+        elif duration_minutes < 0:
+            raise ValueError("Duration minutes cannot be negative")
+        else:
+            self._duration_minutes = duration_minutes
+
+    # Class Methods
+
     @classmethod
     def create_table(cls, conn, cursor):
         cursor.execute(
             """
-         CREATE TABLE IF NOT EXISTS exercises (
-             id INTEGER PRIMARY KEY,
-             name TEXT,
-             description TEXT,
-             instructions TEXT
-         )
-     """
+        CREATE TABLE IF NOT EXISTS exercises (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            description TEXT,
+            instructions TEXT,
+            muscle_group TEXT,
+            sets INTEGER,
+            reps_per_set INTEGER,
+            duration_minutes INTEGER
+        )
+    """
         )
         conn.commit()
 
@@ -107,23 +179,53 @@ class Exercise:
 
     def save(self):
         CURSOR.execute(
-            "INSERT INTO exercises (name, description, instructions) VALUES (?, ?, ?)",
-            (self.name, self.description, self.instructions),
+            "INSERT INTO exercises (name, description, instructions, muscle_group, sets, reps_per_set, duration_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                self.name,
+                self.description,
+                self.instructions,
+                self.muscle_group,
+                self.sets,
+                self.reps_per_set,
+                self.duration_minutes,
+            ),
         )
         CONN.commit()
         self.id = CURSOR.lastrowid
         self.__class__.ALL[self.id] = self
 
-    def update(self, name, description):
-        if not name or not description:
-            raise ValueError("Name and Description cannot be empty.")
+    def update(
+        self, name, description, muscle_group, sets, reps_per_set, duration_minutes
+    ):
+        if (
+            not name
+            or not description
+            or not muscle_group
+            or not sets
+            or not reps_per_set
+            or not duration_minutes
+        ):
+            raise ValueError("All fields cannot be empty.")
         self.name = name
         self.description = description
-        CURSOR.execute(
-            "UPDATE exercises SET name=?, description=? WHERE id=?",
-            (self.name, self.description, self.id),
-        )
-        CONN.commit()
+        self.muscle_group = muscle_group
+        self.sets = sets
+        self.reps_per_set = reps_per_set
+        self.duration_minutes = duration_minutes
+
+    CURSOR.execute(
+        "UPDATE exercises SET name=?, description=?, muscle_group=?, sets=?, reps_per_set=?, duration_minutes=? WHERE id=?",
+        (
+            self.name,
+            self.description,
+            self.muscle_group,
+            self.sets,
+            self.reps_per_set,
+            self.duration_minutes,
+            self.id,
+        ),
+    )
+    CONN.commit()
 
     def delete(self):
         CURSOR.execute("DELETE FROM exercises WHERE id=?", (self.id,))

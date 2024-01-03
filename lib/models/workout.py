@@ -4,22 +4,26 @@ from models.__init__ import CONN, CURSOR
 class Workout:
     all = []
 
-    def __init__(self, user, date, id=None):
-        self.user = user
+    def __init__(self, username, date, id=None, workout_duration=None, goal=None):
+        self.username = username
         self.date = date
         self.id = id
-        self.all.append(self)
+        self.workout_duration = workout_duration
+        self.goal = goal
+        self.all[self.id] = self
 
     @property
-    def user(self):
-        return self._user
+    def username(self):
+        return self._username
 
-    @user.setter
-    def user(self, user):
-        if not isinstance(user, User):
-            raise TypeError("user must be an instance of User")
+    @username.setter
+    def username(self, username):
+        if not isinstance(username, str):
+            raise TypeError("Username must be a string")
+        elif not len(username) > 0:
+            raise ValueError("Username cannot be empty")
         else:
-            self._user = user
+            self._username = username
 
     @property
     def date(self):
@@ -34,22 +38,70 @@ class Workout:
         else:
             self._date = date
 
+    @property
+    def workout_duration(self):
+        # Fetch all exercises associated with the workout
+        CURSOR.execute("SELECT * FROM workout_exercises WHERE workout_id=?", (self.id,))
+        workout_exercises = CURSOR.fetchall()
+
+        # Sum the durations of all exercises
+        total_duration = sum(
+            [exercise["duration_minutes"] for exercise in workout_exercises]
+        )
+
+        return total_duration
+
+    @workout_duration.setter
+    def workout_duration(self, workout_duration):
+        if not isinstance(workout_duration, int):
+            raise TypeError("Workout duration must be an integer")
+        else:
+            # Fetch all exercises related to the workout
+            CURSOR.execute(
+                "SELECT * FROM workout_exercises WHERE workout_id=?", (self.id,)
+            )
+
+            workout_exercises = CURSOR.fetchall()
+
+        # Sum the durations of all exercises
+        total_duration = sum(
+            [exercise["duration_minutes"] for exercise in workout_exercises]
+        )
+
+        # Set the workout duration
+        self._workout_duration = total_duration
+
+    @property
+    def goal(self):
+        return self._goal
+
+    @goal.setter
+    def goal(self, goal):
+        if not isinstance(goal, str):
+            raise TypeError("Goal must be a string")
+        elif goal not in ["Strength", "Cardio", "Hybrid"]:
+            raise ValueError("Goal must be either 'Strength', 'Cardio', or 'Hybrid'")
+        else:
+            self._goal = goal
+
     def __repr__(self):
         return f"<Workout {self.id}>"
 
     def __str__(self):
-        return f"Workout ID: {self.id}, Date: {self.date}"
+        return f"Workout ID: {self.id}, Date: {self.date}, Username: {self.username}, Workout Duration: {self.workout_duration}, Goal: {self.goal}"
 
     @classmethod
     def create_table(cls, conn, cursor):
         cursor.execute(
             """
-           CREATE TABLE IF NOT EXISTS workouts (
-               id INTEGER PRIMARY KEY,
-               user_id INTEGER,
-               date TEXT
-           )
-           """
+          CREATE TABLE IF NOT EXISTS workouts (
+              id INTEGER PRIMARY KEY,
+              username VARCHAR,
+              date DATE,
+              workout_duration INTEGER,
+              goal VARCHAR
+          )
+          """
         )
         conn.commit()
 
@@ -59,10 +111,10 @@ class Workout:
         conn.commit()
 
     @classmethod
-    def create(cls, user_id, date):
-        if not user_id or not date:
-            raise ValueError("User ID and Date cannot be empty.")
-        cls(user_id, date).save()
+    def create(cls, username, date, workout_duration, goal):
+        if not username or not date or not workout_duration or not goal:
+            raise ValueError("All fields cannot be empty.")
+        cls(username, date, workout_duration, goal).save()
 
     @classmethod
     def instance_from_db(cls, id):
@@ -84,25 +136,27 @@ class Workout:
 
     def save(self):
         CURSOR.execute(
-            "INSERT INTO workouts (user_id, date) VALUES (?, ?)",
-            (self.user_id, self.date),
+            "INSERT INTO workouts (username, date, workout_duration, goal) VALUES (?, ?, ?, ?)",
+            (self.username, self.date, self.workout_duration, self.goal),
         )
         CONN.commit()
         self.id = CURSOR.lastrowid
-        self.__class__.ALL[self.id] = self
+        self.__class__.all[self.id] = self
 
-    def update(self, user_id, date):
-        if not user_id or not date:
-            raise ValueError("User ID and Date cannot be empty.")
-        self.user_id = user_id
+    def update(self, username, date, workout_duration, goal):
+        if not username or not date or not workout_duration or not goal:
+            raise ValueError("All fields cannot be empty.")
+        self.username = username
         self.date = date
+        self.workout_duration = workout_duration
+        self.goal = goal
         CURSOR.execute(
-            "UPDATE workouts SET user_id=?, date=? WHERE id=?",
-            (self.user_id, self.date, self.id),
+            "UPDATE workouts SET username=?, date=?, workout_duration=?, goal=? WHERE id=?",
+            (self.username, self.date, self.workout_duration, self.goal, self.id),
         )
         CONN.commit()
 
     def delete(self):
         CURSOR.execute("DELETE FROM workouts WHERE id=?", (self.id,))
         CONN.commit()
-        del self.__class__.ALL[self.id]
+        del self.__class__.all[self.id]

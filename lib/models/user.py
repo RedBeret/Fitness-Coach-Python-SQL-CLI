@@ -20,7 +20,13 @@ class User:
         elif not len(username) > 0:
             raise ValueError("username cannot be empty")
         else:
-            self._username = username
+            # Check if the username already exists in the database
+            CURSOR.execute("SELECT * FROM users WHERE username=?", (username,))
+            existing_user = CURSOR.fetchone()
+            if existing_user is not None:
+                raise ValueError("This username is already taken.")
+            else:
+                self._username = username
 
     def __repr__(self):
         return f"<User {self.username}>"
