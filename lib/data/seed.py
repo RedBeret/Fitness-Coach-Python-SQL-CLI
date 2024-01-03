@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS user_workouts (
   date DATE NOT NULL,
   duration INTEGER NOT NULL,
   goal VARCHAR NOT NULL,
-  exercises TEXT,
   FOREIGN KEY (user_id) REFERENCES users (id)
 );
 """
@@ -48,9 +47,9 @@ CREATE TABLE IF NOT EXISTS user_workouts (
 cursor.execute(
     """
 CREATE TABLE IF NOT EXISTS workout_exercises (
+  id INTEGER PRIMARY KEY,
   workout_id INTEGER NOT NULL,
   exercise_id INTEGER NOT NULL,
-  PRIMARY KEY (workout_id, exercise_id),
   FOREIGN KEY (workout_id) REFERENCES user_workouts (id),
   FOREIGN KEY (exercise_id) REFERENCES exercises (id)
 );
@@ -94,32 +93,42 @@ workouts = [
         "date": "2024-01-03",
         "workout_duration": 60,
         "goal": "Strength Training",
-        "exercises": "[1, 2, 3]",
     },
     {
         "user_id": 2,
         "date": "2024-01-04",
         "workout_duration": 45,
-        "goal": "Cardio",
-        "exercises": "[4, 5, 6]",
+        "goal": "Abs",
     },
 ]
 
-# Insert seed data for user workouts
+# Insert seed data for user workouts and workout exercises
 for workout in workouts:
     cursor.execute(
         """
-    INSERT INTO user_workouts (user_id, date, duration, goal, exercises) VALUES (?, ?, ?, ?, ?)
+    INSERT INTO user_workouts (user_id, date, duration, goal) VALUES (?, ?, ?, ?)
     """,
         (
             workout["user_id"],
             workout["date"],
             workout["workout_duration"],
             workout["goal"],
-            workout["exercises"],
         ),
     )
 
+    # Add workout exercises dummy data
+    workout_id = cursor.lastrowid
+
+    exercise_ids = [1, 2, 3]
+    for exercise_id in exercise_ids:
+        cursor.execute(
+            """
+        INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)
+        """,
+            (workout_id, exercise_id),
+        )
+
+# Commit changes and close connection
 conn.commit()
 conn.close()
 
