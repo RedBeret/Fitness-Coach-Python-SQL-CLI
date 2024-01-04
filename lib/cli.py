@@ -69,9 +69,7 @@ def user_management_menu(current_user, CURSOR, CONN):
     print("0: Return to Main Menu")
     choice = input("Please choose an option: ")
     if choice == "1":
-        user_deleted = delete_user(current_user, CURSOR, CONN)
-
-        if user_deleted:
+        if delete_user(current_user, CURSOR, CONN):
             print("You have been logged out.")
             return
     elif choice == "0":
