@@ -1,8 +1,8 @@
-from models.__init__ import CONN, CURSOR
+from lib.models.__init__ import CONN, CURSOR
 
 
 class Exercise:
-    all = []
+    all = {}
 
     def __init__(
         self,
@@ -194,40 +194,43 @@ class Exercise:
         self.id = CURSOR.lastrowid
         self.__class__.ALL[self.id] = self
 
-    def update(
-        self, name, description, muscle_group, sets, reps_per_set, duration_minutes
-    ):
-        if (
-            not name
-            or not description
-            or not muscle_group
-            or not sets
-            or not reps_per_set
-            or not duration_minutes
+    def update(self):
+        if not all(
+            [
+                self.name,
+                self.description,
+                self.muscle_group,
+                self.sets,
+                self.reps_per_set,
+                self.duration_minutes,
+            ]
         ):
-            raise ValueError("All fields cannot be empty.")
-        self.name = name
-        self.description = description
-        self.muscle_group = muscle_group
-        self.sets = sets
-        self.reps_per_set = reps_per_set
-        self.duration_minutes = duration_minutes
+            raise ValueError("All fields must be filled to update the exercise.")
 
-    CURSOR.execute(
-        "UPDATE exercises SET name=?, description=?, muscle_group=?, sets=?, reps_per_set=?, duration_minutes=? WHERE id=?",
-        (
-            self.name,
-            self.description,
-            self.muscle_group,
-            self.sets,
-            self.reps_per_set,
-            self.duration_minutes,
-            self.id,
-        ),
-    )
-    CONN.commit()
+        CURSOR.execute(
+            "UPDATE exercises SET name=?, description=?, muscle_group=?, sets=?, reps_per_set=?, duration_minutes=? WHERE id=?",
+            (
+                self.name,
+                self.description,
+                self.muscle_group,
+                self.sets,
+                self.reps_per_set,
+                self.duration_minutes,
+                self.id,
+            ),
+        )
+        CONN.commit()
 
     def delete(self):
         CURSOR.execute("DELETE FROM exercises WHERE id=?", (self.id,))
         CONN.commit()
         del self.__class__.ALL[self.id]
+
+    def create_exercise():
+        exercise_name = input("Enter the exercise name: ")
+        sets = int(input("Enter the number of sets: "))
+        reps = int(input("Enter the number of reps: "))
+        time = int(input("Enter the exercise duration (in seconds): "))
+        category = get_workout_type()
+
+        pass
