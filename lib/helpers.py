@@ -3,42 +3,47 @@ import random
 
 from tabulate import tabulate
 
-
 # User Management Functions
-def create_user():
-    name = input("Enter the new user's name: ")
-    pass
 
 
-def list_users():
-    pass
+def delete_user(current_user, CURSOR, CONN):
+    if current_user:
+        while True:
+            confirm = input(
+                f"Are you sure you want to delete your account ({current_user.username}) and all associated workouts? (yes/no): "
+            )
+            if confirm.lower() == "yes":
+                delete_user_workouts(
+                    current_user.id, CONN
+                )  # Delete the user's workouts
+                current_user.delete()
+                print(
+                    f"Account {current_user.username} and all associated records deleted successfully."
+                )
+                return True  # Indicates the user was deleted and should be logged out
+            elif confirm.lower() == "no":
+                print("Account deletion cancelled.")
+                return False
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
 
 
-def update_user():
-    user_id = input("Enter the user's ID to update: ")
-
-    pass
-
-
-def delete_user():
-    user_id = input("Enter the user's ID to delete: ")
-
-    pass
+def delete_user_workouts(user_id, CONN):
+    CURSOR = CONN.cursor()
+    CURSOR.execute("DELETE FROM user_workouts WHERE user_id = ?", (user_id,))
+    CURSOR.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    CONN.commit()
 
 
 # Workout Management Functions
-def create_workout():
-    workout_type = get_workout_type()
-    duration = int(input("Enter the workout duration in minutes: "))
-    workout = Workout(workout_type, duration)
-    pass
+# def create_workout():
+#     workout_type = get_workout_type()
+#     duration = int(input("Enter the workout duration in minutes: "))
+#     workout = Workout(workout_type, duration)
+#     pass
 
 
-def list_workouts():
-    pass
-
-
-def update_workout():
+def list_user_workouts():
     pass
 
 
@@ -58,10 +63,6 @@ def create_exercise():
 
 
 def list_exercises():
-    pass
-
-
-def update_exercise():
     pass
 
 

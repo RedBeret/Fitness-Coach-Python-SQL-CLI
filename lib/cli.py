@@ -1,31 +1,36 @@
 # lib/cli.py
+
 import random
+import sqlite3
 
 from tabulate import tabulate
 
+from lib.models.user import User
+
+CONN = sqlite3.connect("./lib/data/workout_plans.db")
+CURSOR = CONN.cursor()
 from .helpers import (
     create_exercise,
-    create_user,
-    create_workout,
     delete_exercise,
     delete_user,
-    delete_workout,
     display_workout_plan,
     exit_program,
     generate_random_workout,
     get_duration_minutes,
     get_workout_type,
     list_exercises,
-    list_users,
-    list_workouts,
-    update_exercise,
-    update_user,
-    update_workout,
+    list_user_workouts,
 )
 
 
-# Adding sections to seperate the functions
-def main_menu():
+def welcome_message():
+    username = input("Please enter your username: ")
+    current_user = User.get_or_create(username)
+    print(f"Welcome, {current_user.username}!")
+    main_menu(current_user)
+
+
+def main_menu(current_user):
     print(
         """  GGGG   Y   Y  M   M
  G       Y   Y  MM MM
@@ -34,6 +39,7 @@ def main_menu():
   GGG      Y    M   M
 """
     )
+
     while True:
         print("\nWelcome to the Fitness App CLI")
         print("1: Quick Start Workout")
@@ -43,9 +49,9 @@ def main_menu():
         print("0: Exit")
         choice = input("Please choose an option: ")
         if choice == "1":
-            quick_start_workout()
+            quick_start_workout(current_user)
         elif choice == "2":
-            user_management_menu()
+            user_management_menu(current_user, CURSOR, CONN)
         elif choice == "3":
             workout_management_menu()
         elif choice == "4":
@@ -57,27 +63,21 @@ def main_menu():
 
 
 # --- User Management Functions ---
-def user_management_menu():
-    while True:
-        print("\nUser Management")
-        print("1: Create New User")
-        print("2: View All Users")
-        print("3: Update User")
-        print("4: Delete User")
-        print("0: Return to Main Menu")
-        choice = input("Please choose an option: ")
-        if choice == "1":
-            create_user()
-        elif choice == "2":
-            list_users()
-        elif choice == "3":
-            update_user()
-        elif choice == "4":
-            delete_user()
-        elif choice == "0":
+def user_management_menu(current_user, CURSOR, CONN):
+    print("\nUser Management")
+    print("1: Delete My Account")
+    print("0: Return to Main Menu")
+    choice = input("Please choose an option: ")
+    if choice == "1":
+        user_deleted = delete_user(current_user, CURSOR, CONN)
+
+        if user_deleted:
+            print("You have been logged out.")
             return
-        else:
-            print("Invalid choice. Please try again.")
+    elif choice == "0":
+        return
+    else:
+        print("Invalid choice. Please try again.")
 
 
 # --- Workout Management Functions ---
@@ -91,22 +91,17 @@ def workout_management_menu():
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
-            workout_management_menu()
             create_workout()
         elif choice == "2":
-            workout_management_menu()
             list_workouts()
         elif choice == "3":
-            workout_management_menu()
             update_workout()
         elif choice == "4":
-            workout_management_menu()
             delete_workout()
         elif choice == "0":
-            main_menu()
+            main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
-            workout_management_menu()
 
 
 # --- Exercise Management Functions ---
@@ -132,7 +127,7 @@ def exercise_management_menu():
             exercise_management_menu()
             delete_exercise()
         elif choice == "0":
-            main_menu()
+            main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
             exercise_management_menu()
@@ -141,15 +136,8 @@ def exercise_management_menu():
 # --- Quick Start Workout ---
 
 
-def quick_start_workout():
+def quick_start_workout(current_user):
     print("\nQuick Start Workout")
-    # Get user input for name in alphabetical characters only
-    while True:
-        name = input("Enter your name: ")
-        if any(not (char.isalpha() or char == " ") for char in name):
-            print("Invalid name. Names should only contain letters and spaces.")
-        else:
-            break
     # gets workout type from user
     workout_type = get_workout_type()
     # gets duration from user
@@ -182,10 +170,11 @@ def quick_start_workout():
             else:
                 print("Unable to generate a workout plan for the specified duration.")
         elif choice == "2":
-            main_menu()
+            main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
 
 
 if __name__ == "__main__":
+    current_user = welcome_message()
     main_menu()
