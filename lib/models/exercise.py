@@ -1,3 +1,5 @@
+import sqlite3
+
 from lib.models.__init__ import CONN, CURSOR
 
 
@@ -6,15 +8,16 @@ class Exercise:
 
     def __init__(
         self,
-        name,
-        description,
-        instructions,
-        muscle_group,
-        sets,
-        reps_per_set,
-        duration_minutes,
         id=None,
+        name=None,
+        description=None,
+        instructions=None,
+        muscle_group=None,
+        sets=None,
+        reps_per_set=None,
+        duration_minutes=None,
     ):
+        self.id = id
         self.name = name
         self.description = description
         self.instructions = instructions
@@ -22,8 +25,6 @@ class Exercise:
         self.sets = sets
         self.reps_per_set = reps_per_set
         self.duration_minutes = duration_minutes
-        self.id = id
-        self.all[self.id] = self
 
     @property
     def name(self):
@@ -128,17 +129,17 @@ class Exercise:
     def create_table(cls, conn, cursor):
         cursor.execute(
             """
-        CREATE TABLE IF NOT EXISTS exercises (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            description TEXT,
-            instructions TEXT,
-            muscle_group TEXT,
-            sets INTEGER,
-            reps_per_set INTEGER,
-            duration_minutes INTEGER
-        )
-    """
+            CREATE TABLE IF NOT EXISTS exercises (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                description TEXT,
+                instructions TEXT,
+                muscle_group TEXT,
+                sets INTEGER,
+                reps_per_set INTEGER,
+                duration_minutes INTEGER
+            )
+        """
         )
         conn.commit()
 
@@ -148,10 +149,27 @@ class Exercise:
         conn.commit()
 
     @classmethod
-    def create(cls, name, description):
-        if not name or not description:
-            raise ValueError("Name and Description cannot be empty.")
-        cls(name, description).save()
+    def create(
+        cls,
+        name,
+        description,
+        instructions,
+        muscle_group,
+        sets,
+        reps_per_set,
+        duration_minutes,
+    ):
+        exercise = cls(
+            name=name,
+            description=description,
+            instructions=instructions,
+            muscle_group=muscle_group,
+            sets=sets,
+            reps_per_set=reps_per_set,
+            duration_minutes=duration_minutes,
+        )
+        exercise.save()
+        return exercise
 
     @classmethod
     def instance_from_db(cls, id):
@@ -162,8 +180,8 @@ class Exercise:
     @classmethod
     def get_all(cls):
         CURSOR.execute("SELECT * FROM exercises")
-        exercises = CURSOR.fetchall()
-        return [cls(*exercise) for exercise in exercises]
+        records = CURSOR.fetchall()
+        return [cls(*record) for record in records]
 
     @classmethod
     def find_by_id(cls, id):
@@ -178,59 +196,55 @@ class Exercise:
         return cls(*record) if record else None
 
     def save(self):
-        CURSOR.execute(
-            "INSERT INTO exercises (name, description, instructions, muscle_group, sets, reps_per_set, duration_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                self.name,
-                self.description,
-                self.instructions,
-                self.muscle_group,
-                self.sets,
-                self.reps_per_set,
-                self.duration_minutes,
-            ),
-        )
-        CONN.commit()
-        self.id = CURSOR.lastrowid
-        self.__class__.ALL[self.id] = self
+        try:
+            if self.id is None:
+                CURSOR.execute(
+                    """
+                        INSERT INTO exercises (name, description, instructions, muscle_group, sets, reps_per_set, duration_minutes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                    (
+                        self.name,
+                        self.description,
+                        self.instructions,
+                        self.muscle_group,
+                        self.sets,
+                        self.reps_per_set,
+                        self.duration_minutes,
+                    ),
+                )
+                CONN.commit()
+                self.id = CURSOR.lastrowid
+            else:
+                self.update()
+        except sqlite3.Error as database_error:
+            print(f"An error occurred while saving the exercise: {database_error}")
 
     def update(self):
-        if not all(
-            [
-                self.name,
-                self.description,
-                self.muscle_group,
-                self.sets,
-                self.reps_per_set,
-                self.duration_minutes,
-            ]
-        ):
-            raise ValueError("All fields must be filled to update the exercise.")
-
-        CURSOR.execute(
-            "UPDATE exercises SET name=?, description=?, muscle_group=?, sets=?, reps_per_set=?, duration_minutes=? WHERE id=?",
-            (
-                self.name,
-                self.description,
-                self.muscle_group,
-                self.sets,
-                self.reps_per_set,
-                self.duration_minutes,
-                self.id,
-            ),
-        )
-        CONN.commit()
+        try:
+            CURSOR.execute(
+                """
+                    UPDATE exercises SET name=?, description=?, instructions=?, muscle_group=?, sets=?, reps_per_set=?, duration_minutes=?
+                    WHERE id=?
+                    """,
+                (
+                    self.name,
+                    self.description,
+                    self.instructions,
+                    self.muscle_group,
+                    self.sets,
+                    self.reps_per_set,
+                    self.duration_minutes,
+                    self.id,
+                ),
+            )
+            CONN.commit()
+        except sqlite3.Error as database_error:
+            print(f"An error occurred while updating the exercise: {database_error}")
 
     def delete(self):
-        CURSOR.execute("DELETE FROM exercises WHERE id=?", (self.id,))
-        CONN.commit()
-        del self.__class__.ALL[self.id]
-
-    def create_exercise():
-        exercise_name = input("Enter the exercise name: ")
-        sets = int(input("Enter the number of sets: "))
-        reps = int(input("Enter the number of reps: "))
-        time = int(input("Enter the exercise duration (in seconds): "))
-        category = get_workout_type()
-
-        pass
+        try:
+            CURSOR.execute("DELETE FROM exercises WHERE id=?", (self.id,))
+            CONN.commit()
+        except sqlite3.Error as database_error:
+            print(f"An error occurred while deleting the exercise: {database_error}")

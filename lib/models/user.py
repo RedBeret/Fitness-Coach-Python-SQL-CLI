@@ -2,6 +2,8 @@ from lib.models.__init__ import CONN, CURSOR
 
 
 class User:
+    all = {}
+
     def __init__(self, username, id=None):
         self.username = username
         self.id = id

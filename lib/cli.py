@@ -1,6 +1,5 @@
 # lib/cli.py
 
-import random
 import sqlite3
 
 from tabulate import tabulate
@@ -8,18 +7,20 @@ from tabulate import tabulate
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 
-CONN = sqlite3.connect("./lib/data/workout_plans.db")
-CURSOR = CONN.cursor()
+# CONN = sqlite3.connect("./lib/data/workout_plans.db")
+# CURSOR = CONN.cursor()
 from .helpers import (
-    delete_exercise,
+    confirm_action,
     delete_user,
     display_workout_plan,
     exit_program,
     generate_random_workout,
     get_duration_minutes,
+    get_valid_input,
     get_workout_type,
-    list_exercises,
+    list_all_exercises,
     list_user_workouts,
+    select_exercise_from_list,
 )
 from .models.exercise import Exercise
 
@@ -56,7 +57,7 @@ def main_menu(current_user):
         elif choice == "3":
             workout_management_menu()
         elif choice == "4":
-            exercise_management_menu()
+            exercise_management_menu(current_user)
         elif choice == "0":
             exit_program()
         else:
@@ -104,7 +105,7 @@ def workout_management_menu():
 
 
 # --- Exercise Management Functions ---
-def exercise_management_menu():
+def exercise_management_menu(current_user):
     while True:
         print("\nExercise Management")
         print("1: Create New Exercise")
@@ -114,22 +115,119 @@ def exercise_management_menu():
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
-            exercise_management_menu()
             create_exercise()
         elif choice == "2":
-            exercise_management_menu()
             list_exercises()
         elif choice == "3":
-            exercise_management_menu()
             update_exercise()
         elif choice == "4":
-            exercise_management_menu()
             delete_exercise()
         elif choice == "0":
             main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
-            exercise_management_menu()
+
+
+def create_exercise():
+    exercise_name = str(
+        get_valid_input(
+            "Enter the exercise name: ",
+            "alpha",
+            "Exercise name should only contain letters. Please try again.",
+        )
+    )
+    description = input("Enter the exercise description: ")
+    instructions = input(
+        "Enter the exercise instructions on how to perform the exercise: "
+    )
+
+    sets = int(
+        get_valid_input(
+            "Enter the number of sets: ",
+            "positive_int",
+            "Number of sets should be a positive number. Please try again.",
+        )
+    )
+    reps_per_set = int(
+        get_valid_input(
+            "Enter the number of reps per set: ",
+            "positive_int",
+            "Number of reps per set should be a positive number. Please try again.",
+        )
+    )
+    duration_minutes = int(
+        get_valid_input(
+            "Enter the exercise duration (in minutes): ",
+            "positive_int",
+            "Exercise duration should be a positive number in minutes. Please try again.",
+        )
+    )
+    muscle_group = get_workout_type()
+    Exercise.create(
+        name=exercise_name,
+        sets=sets,
+        description=description,
+        instructions=instructions,
+        reps_per_set=reps_per_set,
+        duration_minutes=duration_minutes,
+        muscle_group=muscle_group,
+    )
+
+    print(f"Exercise '{exercise_name}' has been created successfully.")
+
+
+def list_exercises():
+    list_all_exercises()
+
+
+def update_exercise():
+    exercise_id = select_exercise_from_list()
+    if exercise_id is None:
+        return
+
+    exercise = Exercise.find_by_id(exercise_id)
+
+    new_sets = get_valid_input(
+        f"You chose {exercise.name}. Please enter the new number of sets (current: {exercise.sets} sets): ",
+        "positive_int",
+        "Invalid input. Please enter a positive number.",
+    )
+    new_reps_per_set = get_valid_input(
+        f"Enter the new number of reps per set (current: {exercise.reps_per_set} reps per set): ",
+        "positive_int",
+        "Invalid input. Please enter a positive number.",
+    )
+    new_duration_minutes = get_valid_input(
+        f"Enter the new exercise duration (in minutes) (current: {exercise.duration_minutes} minutes): ",
+        "positive_int",
+        "Invalid input. Please enter a positive number.",
+    )
+
+    # Update the exercise object with the new values
+    exercise.sets = new_sets
+    exercise.reps_per_set = new_reps_per_set
+    exercise.duration_minutes = new_duration_minutes
+
+    # Save the updated exercise to the database
+    exercise.update()
+
+    print(f"Exercise {exercise.name} has been updated successfully.")
+
+
+def delete_exercise():
+    exercise_id = select_exercise_from_list()
+    if exercise_id:
+        exercise = Exercise.find_by_id(exercise_id)
+        if not exercise:
+            print("Exercise not found.")
+            return
+        if confirm_action(
+            f"Are you sure you want to delete {exercise.name}? (yes/no): "
+        ):
+            exercise.delete()
+            print(f"Exercise '{exercise.name}' has been deleted successfully.")
+        else:
+            print("Exercise deletion cancelled.")
 
 
 # --- Quick Start Workout ---
