@@ -10,7 +10,7 @@ def delete_user(current_user, CURSOR, CONN):
     if current_user:
         while True:
             confirm = input(
-                f"Are you sure you want to delete your account ({current_user.username}) and all associated workouts? (yes/no): "
+                f"Are you sure you want to delete your account ({current_user.username}), all associated workouts, and logout? (yes/no): "
             )
             if confirm.lower() == "yes":
                 delete_user_workouts(
@@ -20,7 +20,8 @@ def delete_user(current_user, CURSOR, CONN):
                 print(
                     f"Account {current_user.username} and all associated records deleted successfully."
                 )
-                return True  # Indicates the user was deleted and should be logged out
+                exit_program()
+                return True
             elif confirm.lower() == "no":
                 print("Account deletion cancelled.")
                 return False
