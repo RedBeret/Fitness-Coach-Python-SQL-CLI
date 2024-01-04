@@ -4,15 +4,14 @@ import random
 from tabulate import tabulate
 
 from lib.models.__init__ import CONN, CURSOR
-
-# User Management Functions
+from lib.models.exercise import Exercise
 
 
 def delete_user(current_user):
     if current_user:
         while True:
             confirm = input(
-                f"Are you sure you want to delete your account ({current_user.username}), all associated workouts, and logout? (yes/no): "
+                f"Are you sure you want to delete your account {current_user.username}, all associated workouts, and logout? (yes/no): "
             )
             if confirm.lower() == "yes":
                 delete_user_workouts(current_user.id)  # Delete the user's workouts
@@ -36,6 +35,75 @@ def delete_user_workouts(user_id):
     CONN.commit()
 
 
+def get_valid_input(prompt, check_type, error_message):
+    while True:
+        user_input = input(prompt)
+        if check_type == "alpha" and user_input.isalpha():
+            return user_input
+        elif (
+            check_type == "positive_int"
+            and user_input.isdigit()
+            and int(user_input) > 0
+        ):
+            return int(user_input)
+        else:
+            print(error_message)
+
+
+def list_all_exercises():
+    exercises = Exercise.get_all()
+    if not exercises:
+        print("No exercises found.")
+        return None
+
+    headers = ["ID", "Name", "Sets", "Reps", "Duration (Min)", "Muscle Group"]
+    exercise_data = []
+
+    for exercise in exercises:
+        exercise_id = exercise.id
+        exercise_name = str(exercise.name)
+        exercise_sets = exercise.sets
+        exercise_reps = exercise.reps_per_set
+        exercise_duration = exercise.duration_minutes
+        exercise_category = exercise.muscle_group
+
+        exercise_info = [
+            exercise_id,
+            exercise_name,
+            exercise_sets,
+            exercise_reps,
+            exercise_duration,
+            exercise_category,
+        ]
+        exercise_data.append(exercise_info)
+
+    print(tabulate(exercise_data, headers, tablefmt="grid"))
+    return exercises
+
+
+def select_exercise_from_list():
+    exercises = list_all_exercises()
+    if exercises is None:
+        return None
+    while True:
+        exercise_id = input("Enter the ID of the exercise: ")
+        if exercise_id.isdigit() and any(
+            exercise.id == int(exercise_id) for exercise in exercises
+        ):
+            return int(exercise_id)
+        else:
+            print("Invalid exercise ID. Please try again.")
+
+
+def confirm_action(prompt):
+    while True:
+        confirm = input(prompt)
+        if confirm.lower() in ["yes", "no"]:
+            return confirm.lower() == "yes"
+        else:
+            print("Please enter 'yes' or 'no'.")
+
+
 # Workout Management Functions
 # def create_workout():
 #     workout_type = get_workout_type()
@@ -49,17 +117,6 @@ def list_user_workouts():
 
 
 def delete_workout():
-    pass
-
-
-# Exercise Management Functions
-
-
-def list_exercises():
-    pass
-
-
-def delete_exercise():
     pass
 
 
