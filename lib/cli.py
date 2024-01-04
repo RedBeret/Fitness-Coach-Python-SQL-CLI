@@ -5,12 +5,12 @@ import sqlite3
 
 from tabulate import tabulate
 
+from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 
 CONN = sqlite3.connect("./lib/data/workout_plans.db")
 CURSOR = CONN.cursor()
 from .helpers import (
-    create_exercise,
     delete_exercise,
     delete_user,
     display_workout_plan,
@@ -21,6 +21,7 @@ from .helpers import (
     list_exercises,
     list_user_workouts,
 )
+from .models.exercise import Exercise
 
 
 def welcome_message():
@@ -51,7 +52,7 @@ def main_menu(current_user):
         if choice == "1":
             quick_start_workout(current_user)
         elif choice == "2":
-            user_management_menu(current_user, CURSOR, CONN)
+            user_management_menu(current_user)
         elif choice == "3":
             workout_management_menu()
         elif choice == "4":
@@ -63,13 +64,13 @@ def main_menu(current_user):
 
 
 # --- User Management Functions ---
-def user_management_menu(current_user, CURSOR, CONN):
+def user_management_menu(current_user):
     print("\nUser Management")
     print("1: Delete My Account")
     print("0: Return to Main Menu")
     choice = input("Please choose an option: ")
     if choice == "1":
-        if delete_user(current_user, CURSOR, CONN):
+        if delete_user(current_user):
             print("You have been logged out.")
             return
     elif choice == "0":

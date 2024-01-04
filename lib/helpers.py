@@ -3,19 +3,19 @@ import random
 
 from tabulate import tabulate
 
+from lib.models.__init__ import CONN, CURSOR
+
 # User Management Functions
 
 
-def delete_user(current_user, CURSOR, CONN):
+def delete_user(current_user):
     if current_user:
         while True:
             confirm = input(
                 f"Are you sure you want to delete your account ({current_user.username}), all associated workouts, and logout? (yes/no): "
             )
             if confirm.lower() == "yes":
-                delete_user_workouts(
-                    current_user.id, CONN
-                )  # Delete the user's workouts
+                delete_user_workouts(current_user.id)  # Delete the user's workouts
                 current_user.delete()
                 print(
                     f"Account {current_user.username} and all associated records deleted successfully."
@@ -29,7 +29,7 @@ def delete_user(current_user, CURSOR, CONN):
                 print("Invalid input. Please enter 'yes' or 'no'.")
 
 
-def delete_user_workouts(user_id, CONN):
+def delete_user_workouts(user_id):
     CURSOR = CONN.cursor()
     CURSOR.execute("DELETE FROM user_workouts WHERE user_id = ?", (user_id,))
     CURSOR.execute("DELETE FROM users WHERE id = ?", (user_id,))
@@ -53,14 +53,6 @@ def delete_workout():
 
 
 # Exercise Management Functions
-def create_exercise():
-    exercise_name = input("Enter the exercise name: ")
-    sets = int(input("Enter the number of sets: "))
-    reps = int(input("Enter the number of reps: "))
-    time = int(input("Enter the exercise duration (in seconds): "))
-    category = get_workout_type()
-
-    pass
 
 
 def list_exercises():
