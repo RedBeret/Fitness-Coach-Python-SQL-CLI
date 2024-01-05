@@ -24,6 +24,7 @@ from .helpers import (
     list_workouts,
     select_exercise_from_list,
     create_workout,
+    delete_workout,
 )
 from .models.exercise import Exercise
 
@@ -89,8 +90,7 @@ def workout_management_menu(current_user):
         print("\nWorkout Management")
         print("1: Create New Workout")
         print("2: View All Workouts")
-        print("3: Update Workout")
-        print("4: Delete Workout")
+        print("3: Delete Workout")
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
@@ -98,8 +98,6 @@ def workout_management_menu(current_user):
         elif choice == "2":
             list_workouts(current_user.username)
         elif choice == "3":
-            update_workout()
-        elif choice == "4":
             delete_workout()
         elif choice == "0":
             main_menu(current_user)
