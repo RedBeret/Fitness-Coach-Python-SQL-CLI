@@ -10,6 +10,14 @@ class User:
         if id is not None:
             User.all[id] = self
 
+    def __repr__(self):
+        return f"<User {self.username}>"
+
+    def __str__(self):
+        return f"{self.username}"
+
+    # Class Properties
+
     @property
     def username(self):
         return self._username
@@ -19,6 +27,8 @@ class User:
         if not isinstance(username, str) or not username:
             raise ValueError("username must be a non-empty string")
         self._username = username
+
+    # Class Methods
 
     @classmethod
     def get_or_create(cls, username):
@@ -34,12 +44,6 @@ class User:
             new_user = cls(username)
             new_user.save()
             return new_user
-
-    def __repr__(self):
-        return f"<User {self.username}>"
-
-    def __str__(self):
-        return f"{self.username}"
 
     @classmethod
     def create_table(cls, conn, cursor):
@@ -64,13 +68,6 @@ class User:
         user = CURSOR.fetchone()
         return cls(*user) if user else None
 
-    # gets all users from the database but we dont want that. as user controls their instance.
-    # @classmethod
-    # def get_all(cls):
-    #     CURSOR.execute("SELECT * FROM users")
-    #     users = CURSOR.fetchall()
-    #     return [cls(*user) for user in users]
-
     @classmethod
     def find_by_id(cls, id):
         CURSOR.execute("SELECT * FROM users WHERE id=?", (id,))
@@ -82,6 +79,15 @@ class User:
         CURSOR.execute("SELECT * FROM users WHERE username=?", (username,))
         record = CURSOR.fetchone()
         return cls(*record) if record else None
+
+    # gets all users from the database but we dont want that. as user controls their instance.
+    # @classmethod
+    # def get_all(cls):
+    #     CURSOR.execute("SELECT * FROM users")
+    #     users = CURSOR.fetchall()
+    #     return [cls(*user) for user in users]
+
+    # CRUD Operations
 
     def save(self):
         if self.id is None:

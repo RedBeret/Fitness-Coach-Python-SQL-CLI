@@ -7,6 +7,8 @@ from lib.models.__init__ import CONN, CURSOR
 from lib.models.exercise import Exercise
 from lib.models.workout import Workout
 
+# User Helpers
+
 
 def delete_user(current_user):
     if current_user:
@@ -34,6 +36,9 @@ def delete_user_workouts(user_id):
     CURSOR.execute("DELETE FROM user_workouts WHERE user_id = ?", (user_id,))
     CURSOR.execute("DELETE FROM users WHERE id = ?", (user_id,))
     CONN.commit()
+
+
+# Exercise Helpers
 
 
 def list_all_exercises():
@@ -81,13 +86,7 @@ def select_exercise_from_list():
             print("Invalid exercise ID. Please try again.")
 
 
-def confirm_action(prompt):
-    while True:
-        confirm = input(prompt)
-        if confirm.lower() in ["yes", "no"]:
-            return confirm.lower() == "yes"
-        else:
-            print("Please enter 'yes' or 'no'.")
+# Workout Helpers
 
 
 def display_workout_details(workout_id):
@@ -137,7 +136,6 @@ def list_workouts_for_selection(username):
     return user_workouts
 
 
-# Misc Functions
 def get_workout_type():
     while True:
         print("Choose a workout type:")
@@ -183,6 +181,9 @@ def display_workout_plan(workout_plan):
     print(tabulate(table_data, headers, tablefmt="grid"))
 
 
+# Data Validation Helpers
+
+
 def get_valid_input(prompt, check_type, error_message):
     while True:
         user_input = input(prompt)
@@ -196,6 +197,15 @@ def get_valid_input(prompt, check_type, error_message):
             return int(user_input)
         else:
             print(error_message)
+
+
+def confirm_action(prompt):
+    while True:
+        confirm = input(prompt)
+        if confirm.lower() in ["yes", "no"]:
+            return confirm.lower() == "yes"
+        else:
+            print("Please enter 'yes' or 'no'.")
 
 
 def exit_program():
