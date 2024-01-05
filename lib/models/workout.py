@@ -59,18 +59,19 @@ class Workout:
         else:
             # Fetch all exercises related to the workout
             CURSOR.execute(
-                "SELECT * FROM workout_exercises WHERE workout_id=?", (self.id,)
+                """
+        SELECT exercises.duration_minutes
+        FROM workout_exercises
+        JOIN exercises ON workout_exercises.exercise_id = exercises.id
+        WHERE workout_exercises.workout_id=?
+        """,
+                (self.id,),
             )
 
-            workout_exercises = CURSOR.fetchall()
-
+        workout_exercises = CURSOR.fetchall()
         # Sum the durations of all exercises
-        total_duration = sum(
-            [exercise["duration_minutes"] for exercise in workout_exercises]
-        )
-
-        # Set the workout duration
-        self._workout_duration = total_duration
+        total_duration = sum(exercise[0] for exercise in workout_exercises)
+        return total_duration
 
     @property
     def goal(self):
@@ -134,32 +135,18 @@ class Workout:
     def get_all(cls, username):
         CURSOR.execute(
             """
-            SELECT user_workouts.id, users.username, user_workouts.date, user_workouts.duration, user_workouts.goal
+            SELECT user_workouts.id, user_workouts.date, user_workouts.duration, user_workouts.goal
             FROM user_workouts
             JOIN users ON user_workouts.user_id = users.id
             WHERE users.username = ?
             """,
             (username,),
         )
-        user_workouts = CURSOR.fetchall()
-        workouts = []
-
-        for workout in user_workouts:
-            try:
-                # Make sure the parameters match the constructor's expected order
-                workout_id, username, date, duration, goal = workout
-                workout_instance = cls(
-                    username=username,
-                    id=workout_id,
-                    date=date,
-                    workout_duration=duration,
-                    goal=goal,
-                )
-                workouts.append(workout_instance)
-            except TypeError as e:
-                print(f"Skipping workout with invalid data: {workout}, error: {e}")
-
-        return workouts
+        rows = CURSOR.fetchall()
+        return [
+            cls(username, id=row[0], date=row[1], workout_duration=row[2], goal=row[3])
+            for row in rows
+        ]
 
     @classmethod
     def find_by_id(cls, id):

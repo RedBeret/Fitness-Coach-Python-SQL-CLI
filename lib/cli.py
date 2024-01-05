@@ -10,11 +10,9 @@ from lib.models.workout import Workout
 
 # CONN = sqlite3.connect("./lib/data/workout_plans.db")
 # CURSOR = CONN.cursor()
-from .helpers import (
+from .helpers import (  # create_workout,; delete_workout,; list_workouts,
     confirm_action,
-    create_workout,
     delete_user,
-    delete_workout,
     display_workout_plan,
     exit_program,
     generate_random_workout,
@@ -22,7 +20,6 @@ from .helpers import (
     get_valid_input,
     get_workout_type,
     list_all_exercises,
-    list_workouts,
     select_exercise_from_list,
 )
 from .models.exercise import Exercise
@@ -127,13 +124,12 @@ def list_workouts(current_user):
     headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
     workout_data = []
 
-    for user_workout in user_workouts:
-        workout_id, username, date, duration, goal = user_workout
+    for workout_instance in user_workouts:
         workout_info = [
-            workout_id,
-            date,
-            duration,
-            goal,
+            workout_instance.id,
+            workout_instance.date,
+            workout_instance.workout_duration,
+            workout_instance.goal,
         ]
         workout_data.append(workout_info)
 
