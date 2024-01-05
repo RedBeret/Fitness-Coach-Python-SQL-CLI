@@ -15,7 +15,7 @@ class Workout:
         self.id = id
         self.workout_duration = workout_duration
         self.goal = goal
-        self.date = date if date else str(dt_date.today())
+        self.date = date or str(dt_date.today())
         self.all[self.id] = self
 
     @property
@@ -46,36 +46,13 @@ class Workout:
 
     @property
     def workout_duration(self):
-        # Fetch all exercises associated with the workout
-        CURSOR.execute(
-            "SELECT exercises.duration_minutes FROM workout_exercises INNER JOIN exercises ON workout_exercises.exercise_id = exercises.id WHERE workout_exercises.workout_id=?",
-            (self.id,),
-        )
-        workout_exercises = CURSOR.fetchall()
-        # Sum the durations of all exercises
-        total_duration = sum(exercise[0] for exercise in workout_exercises)
-        return total_duration
+        return self._workout_duration
 
     @workout_duration.setter
     def workout_duration(self, workout_duration):
         if not isinstance(workout_duration, int):
             raise TypeError("Workout duration must be an integer")
-        else:
-            # Fetch all exercises related to the workout
-            CURSOR.execute(
-                """
-        SELECT exercises.duration_minutes
-        FROM workout_exercises
-        JOIN exercises ON workout_exercises.exercise_id = exercises.id
-        WHERE workout_exercises.workout_id=?
-        """,
-                (self.id,),
-            )
-
-        workout_exercises = CURSOR.fetchall()
-        # Sum the durations of all exercises
-        total_duration = sum(exercise[0] for exercise in workout_exercises)
-        return total_duration
+        self._workout_duration = workout_duration
 
     @property
     def goal(self):
@@ -119,7 +96,7 @@ class Workout:
     @classmethod
     def create(cls, username, workout_duration, goal, date=None):
         if not date:
-            date = date.today().isoformat()
+            date = dt_date.today().isoformat()
 
         if not username or not workout_duration or not goal:
             raise ValueError("Username, workout duration, and goal cannot be empty.")
@@ -177,25 +154,24 @@ class Workout:
             if self.id is None:
                 CURSOR.execute(
                     """
-                        INSERT INTO user_workouts (user_id, date, duration, goal)
-                        VALUES ((SELECT id FROM users WHERE username = ?), ?, ?, ?)
-                        """,
-                    (self.username, self.date, self.workout_duration, self.goal),
+                    INSERT INTO user_workouts (user_id, date, duration, goal)
+                    VALUES ((SELECT id FROM users WHERE username = ?), ?, ?, ?)
+                    """,
+                    (self.username, self.date, self._workout_duration, self.goal),
                 )
                 CONN.commit()
                 self.id = CURSOR.lastrowid
-                self.__class__.all[self.id] = self
             else:
-                # If the workout already has an ID, update the record
                 CURSOR.execute(
                     """
-                        UPDATE user_workouts SET date=?, duration=?, goal=? WHERE id=?
-                        """,
-                    (self.date, self.workout_duration, self.goal, self.id),
+                    UPDATE user_workouts SET date=?, duration=?, goal=? WHERE id=?
+                    """,
+                    (self.date, self._workout_duration, self.goal, self.id),
                 )
                 CONN.commit()
-        except sqlite3.Error as database_error:
-            print(f"An error occurred while saving the workout: {database_error}")
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            CONN.rollback()
 
     @classmethod
     def delete_by_id(cls, workout_id):
@@ -204,6 +180,3 @@ class Workout:
         )
         CURSOR.execute("DELETE FROM user_workouts WHERE id = ?", (workout_id,))
         CONN.commit()
-
-
-# test

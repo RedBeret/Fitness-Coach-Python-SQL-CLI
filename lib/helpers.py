@@ -166,19 +166,21 @@ def get_duration_minutes():
             print("Invalid input. Please enter a positive whole number.")
 
 
-def display_workout_plan(workout_plan):
+def display_workout_plan(exercise_ids):
     headers = ["Exercise Name", "Sets", "Reps", "Duration (Min)"]
     table_data = []
 
-    for exercise in workout_plan:
-        table_data.append(
-            [
-                exercise["Exercise Name"],
-                exercise["Sets"],
-                exercise["Reps"],
-                exercise["Duration (Min)"],
-            ]
-        )
+    for exercise_id in exercise_ids:
+        exercise = Exercise.instance_from_db(exercise_id)
+        if exercise:
+            table_data.append(
+                [
+                    exercise.name,
+                    exercise.sets,
+                    exercise.reps_per_set,
+                    exercise.duration_minutes,
+                ]
+            )
 
     print(tabulate(table_data, headers, tablefmt="grid"))
 

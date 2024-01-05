@@ -10,9 +10,7 @@ from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 from lib.models.workout import Workout
 
-# CONN = sqlite3.connect("./lib/data/workout_plans.db")
-# CURSOR = CONN.cursor()
-from .helpers import (  # create_workout,; delete_workout,; list_workouts,
+from .helpers import (
     confirm_action,
     delete_user,
     display_workout_details,
@@ -257,12 +255,10 @@ def update_exercise():
         "Invalid input. Please enter a positive number.",
     )
 
-    # Update the exercise object with the new values
     exercise.sets = new_sets
     exercise.reps_per_set = new_reps_per_set
     exercise.duration_minutes = new_duration_minutes
 
-    # Save the updated exercise to the database
     exercise.update()
 
     print(f"Exercise {exercise.name} has been updated successfully.")
@@ -292,9 +288,23 @@ def quick_start_workout(current_user):
     workout_type = get_workout_type()
     duration_minutes = get_duration_minutes()
 
-    workout_plan = generate_random_workout(duration_minutes, workout_type)
-    if workout_plan:
-        display_workout_plan(workout_plan)
+    selected_exercises = generate_random_workout(duration_minutes, workout_type)
+    if selected_exercises:
+        workout_instance = Workout.create(
+            username=current_user.username,
+            workout_duration=duration_minutes,
+            goal=workout_type,
+        )
+
+        for exercise_id in selected_exercises:
+            CURSOR.execute(
+                "INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)",
+                (workout_instance.id, exercise_id),
+            )
+        CONN.commit()
+
+        print("Workout saved successfully.")
+        display_workout_plan(selected_exercises)
     else:
         print("Unable to generate a workout plan for the specified duration.")
 
@@ -303,44 +313,37 @@ def quick_start_workout(current_user):
 
 
 def generate_random_workout(duration_minutes, workout_type):
-    CURSOR.execute("SELECT * FROM exercises WHERE muscle_group = ?", (workout_type,))
-    exercises = [Exercise(*row) for row in CURSOR.fetchall()]
+    CURSOR.execute(
+        "SELECT id, duration_minutes FROM exercises WHERE muscle_group = ?",
+        (workout_type,),
+    )
+    exercises = CURSOR.fetchall()
 
     if not exercises:
         print(f"No exercises found for {workout_type} workout.")
-        return None
+        return []
 
-    workout_plan = []
+    selected_exercises = []
     current_duration = 0
 
     while current_duration < duration_minutes:
-        # Filter exercises that can fit in the remaining duration
         available_exercises = [
-            exercise
-            for exercise in exercises
-            if exercise.duration_minutes <= (duration_minutes - current_duration)
+            (exercise_id, duration)
+            for exercise_id, duration in exercises
+            if duration <= (duration_minutes - current_duration)
         ]
+
         if not available_exercises:
             break
 
-        exercise = random.choice(available_exercises)
-        exercise_duration = exercise.duration_minutes
-        workout_plan.append(
-            {
-                "Exercise Name": exercise.name,
-                "Sets": exercise.sets,
-                "Reps": exercise.reps_per_set,
-                "Duration (Min)": exercise_duration,
-            }
-        )
+        exercise_id, exercise_duration = random.choice(available_exercises)
+        selected_exercises.append(exercise_id)
         current_duration += exercise_duration
 
-    if current_duration < duration_minutes:
-        print(
-            f"Unable to generate a workout plan for the full specified duration of {duration_minutes} minutes. Generated a plan for {current_duration} minutes instead."
-        )
+        if current_duration >= duration_minutes:
+            break
 
-    return workout_plan
+    return selected_exercises
 
 
 if __name__ == "__main__":
