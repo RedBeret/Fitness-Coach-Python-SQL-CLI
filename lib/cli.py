@@ -289,10 +289,9 @@ def delete_exercise():
 
 def quick_start_workout(current_user):
     print("\nQuick Start Workout")
-    workout_type = get_workout_type()  # This can be any string chosen by the user
+    workout_type = get_workout_type()
     duration_minutes = get_duration_minutes()
 
-    # Generate the workout plan
     workout_plan = generate_random_workout(duration_minutes, workout_type)
     if workout_plan:
         display_workout_plan(workout_plan)

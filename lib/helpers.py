@@ -36,21 +36,6 @@ def delete_user_workouts(user_id):
     CONN.commit()
 
 
-def get_valid_input(prompt, check_type, error_message):
-    while True:
-        user_input = input(prompt)
-        if check_type == "alpha" and user_input.isalpha():
-            return user_input
-        elif (
-            check_type == "positive_int"
-            and user_input.isdigit()
-            and int(user_input) > 0
-        ):
-            return int(user_input)
-        else:
-            print(error_message)
-
-
 def list_all_exercises():
     exercises = Exercise.get_all()
     if not exercises:
@@ -196,6 +181,21 @@ def display_workout_plan(workout_plan):
         )
 
     print(tabulate(table_data, headers, tablefmt="grid"))
+
+
+def get_valid_input(prompt, check_type, error_message):
+    while True:
+        user_input = input(prompt)
+        if check_type == "alpha" and user_input.isalpha():
+            return user_input
+        elif (
+            check_type == "positive_int"
+            and user_input.isdigit()
+            and int(user_input) > 0
+        ):
+            return int(user_input)
+        else:
+            print(error_message)
 
 
 def exit_program():
