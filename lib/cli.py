@@ -128,16 +128,12 @@ def list_workouts(current_user):
     workout_data = []
 
     for user_workout in user_workouts:
-        workout_id = user_workout.id
-        workout_date = user_workout.date
-        workout_duration = user_workout.workout_duration
-        workout_goal = user_workout.goal
-
+        workout_id, username, date, duration, goal = user_workout
         workout_info = [
             workout_id,
-            workout_date,
-            workout_duration,
-            workout_goal,
+            date,
+            duration,
+            goal,
         ]
         workout_data.append(workout_info)
 
