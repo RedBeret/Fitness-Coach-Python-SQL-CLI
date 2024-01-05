@@ -4,13 +4,18 @@ import random
 import sqlite3
 from datetime import date, datetime
 
-from tabulate import tabulate
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+console = Console()
 
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 from lib.models.workout import Workout
 
-from .helpers import (
+from .helpers import (  # get_workout_type,
     confirm_action,
     delete_user,
     display_workout_details,
@@ -18,7 +23,6 @@ from .helpers import (
     exit_program,
     get_duration_minutes,
     get_valid_input,
-    get_workout_type,
     list_all_exercises,
     list_workouts_for_selection,
     select_exercise_from_list,
@@ -35,22 +39,32 @@ def welcome_message():
 
 
 def main_menu(current_user):
-    print(
-        """  GGGG   Y   Y  M   M
- G       Y   Y  MM MM
- G  GG    Y Y   M M M
- G   G     Y    M   M
-  GGG      Y    M   M
-"""
-    )
+    gym_art = """
+      GGGG   Y   Y  M   M
+     G       Y   Y  MM MM
+     G  GG    Y Y   M M M
+     G   G     Y    M   M
+      GGG      Y    M   M
+    """
+    console.print(gym_art, style="bold blue")
 
     while True:
-        print("\nWelcome to the Fitness App CLI")
-        print("1: Quick Start Workout")
-        print("2: User Management")
-        print("3: Workout Management")
-        print("4: Exercise Management")
-        print("0: Exit")
+        welcome_panel = Panel(
+            f"Welcome, [bold green]{current_user.username}![/bold green] to the Fitness App",
+            expand=False,
+        )
+        console.print(welcome_panel)
+        menu_table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+        menu_table.add_column("Option", justify="center")
+        menu_table.add_column("Action", justify="center")
+
+        menu_table.add_row("1", "Quick Start Workout")
+        menu_table.add_row("2", "User Management")
+        menu_table.add_row("3", "Workout Management")
+        menu_table.add_row("4", "Exercise Management")
+        menu_table.add_row("0", "Exit")
+
+        console.print(menu_table)
         choice = input("Please choose an option: ")
         if choice == "1":
             quick_start_workout(current_user)
@@ -68,31 +82,45 @@ def main_menu(current_user):
 
 # --- User Management Functions ---
 def user_management_menu(current_user):
-    print("\nUser Management")
-    print("1: Delete My Account")
-    print("0: Return to Main Menu")
-    choice = input("Please choose an option: ")
-    if choice == "1":
-        if delete_user(current_user):
-            print("You have been logged out.")
+    while True:
+        console.print(Panel("User Management", style="bold green"))
+
+        menu_table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+        menu_table.add_column("Option", justify="center")
+        menu_table.add_column("Action", justify="center")
+
+        menu_table.add_row("1", "Delete My Account")
+        menu_table.add_row("0", "Return to Main Menu")
+
+        console.print(menu_table)
+        choice = input("Please choose an option: ")
+        if choice == "1":
+            if delete_user(current_user):
+                print("You have been logged out.")
+                return
+        elif choice == "0":
             return
-    elif choice == "0":
-        return
-    else:
-        print("Invalid choice. Please try again.")
+        else:
+            print("Invalid choice. Please try again.")
 
 
 # --- Workout Management Functions ---
 def workout_management_menu(current_user):
     while True:
-        print("\nWorkout Management")
-        print("1: View All Workouts")
-        print("2: Delete Workout")
-        print("0: Return to Main Menu")
+        console.print(Panel("Workout Management", style="bold green"))
+
+        menu_table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+        menu_table.add_column("Option", justify="center")
+        menu_table.add_column("Action", justify="center")
+
+        menu_table.add_row("1", "View All Workouts")
+        menu_table.add_row("2", "Delete Workout")
+        menu_table.add_row("0", "Return to Main Menu")
+
+        console.print(menu_table)
         choice = input("Please choose an option: ")
         if choice == "1":
             list_workouts(current_user)
-
         elif choice == "2":
             delete_workout(current_user)
         elif choice == "0":
@@ -159,12 +187,19 @@ def delete_workout(current_user):
 # --- Exercise Management Functions ---
 def exercise_management_menu(current_user):
     while True:
-        print("\nExercise Management")
-        print("1: Create New Exercise")
-        print("2: View All Exercises")
-        print("3: Update Exercise")
-        print("4: Delete Exercise")
-        print("0: Return to Main Menu")
+        console.print(Panel("Exercise Menu", style="bold green"))
+
+        menu_table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+        menu_table.add_column("Option", justify="center")
+        menu_table.add_column("Action", justify="center")
+
+        menu_table.add_row("1", "Create New Exercise")
+        menu_table.add_row("2", "View All Exercises")
+        menu_table.add_row("3", "Update Exercise")
+        menu_table.add_row("4", "Delete Exercise")
+        menu_table.add_row("0", "Return to Main Menu")
+
+        console.print(menu_table)
         choice = input("Please choose an option: ")
         if choice == "1":
             create_exercise()
@@ -284,32 +319,49 @@ def delete_exercise():
 
 
 def quick_start_workout(current_user):
+    workout_types = {"1": "Upper Body", "2": "Lower Body", "3": "Stretching"}
+
     print("\nQuick Start Workout")
-    workout_type = get_workout_type()
-    duration_minutes = get_duration_minutes()
 
-    selected_exercises = generate_random_workout(duration_minutes, workout_type)
-    if selected_exercises:
-        workout_instance = Workout.create(
-            username=current_user.username,
-            workout_duration=duration_minutes,
-            goal=workout_type,
-        )
+    while True:
+        console.print(Panel("Choose a workout type:", style="bold green"))
 
-        for exercise_id in selected_exercises:
-            CURSOR.execute(
-                "INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)",
-                (workout_instance.id, exercise_id),
-            )
-        CONN.commit()
+        menu_table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+        menu_table.add_column("Option", justify="center")
+        menu_table.add_column("Workout Type", justify="center")
 
-        print("Workout saved successfully.")
-        display_workout_plan(selected_exercises)
-    else:
-        print("Unable to generate a workout plan for the specified duration.")
+        for option, workout_type in workout_types.items():
+            menu_table.add_row(option, workout_type)
 
-    input("Press Enter to return to the main menu...")
-    main_menu(current_user)
+        console.print(menu_table)
+
+        choice = input("Please choose an option: ")
+        if choice in workout_types:
+            workout_type = workout_types[choice]
+            duration_minutes = get_duration_minutes()
+
+            selected_exercises = generate_random_workout(duration_minutes, workout_type)
+            if selected_exercises:
+                workout_instance = Workout.create(
+                    username=current_user.username,
+                    workout_duration=duration_minutes,
+                    goal=workout_type,
+                )
+
+                for exercise_id in selected_exercises:
+                    CURSOR.execute(
+                        "INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)",
+                        (workout_instance.id, exercise_id),
+                    )
+                CONN.commit()
+
+                print("Workout saved successfully.")
+                display_workout_plan(selected_exercises)
+            else:
+                print("Unable to generate a workout plan for the specified duration.")
+
+            input("Press Enter to return to the main menu...")
+            main_menu(current_user)
 
 
 def generate_random_workout(duration_minutes, workout_type):
