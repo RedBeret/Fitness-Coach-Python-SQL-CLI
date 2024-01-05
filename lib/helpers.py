@@ -141,22 +141,22 @@ def list_workouts_for_selection(username):
     return user_workouts
 
 
-# def get_workout_type():
-#     while True:
-#         print("Choose a workout type:")
-#         print("1: Upper Body")
-#         print("2: Lower Body")
-#         print("3: Stretching")
-#         choice = input("Please choose an option: ")
+def get_workout_type():
+    while True:
+        print("Choose a workout type:")
+        print("1: Upper Body")
+        print("2: Lower Body")
+        print("3: Stretching")
+        choice = input("Please choose an option: ")
 
-#         if choice == "1":
-#             return "Upper Body"
-#         elif choice == "2":
-#             return "Lower Body"
-#         elif choice == "3":
-#             return "Stretching"
-#         else:
-#             print("Invalid choice. Please try again.")
+        if choice == "1":
+            return "Upper Body"
+        elif choice == "2":
+            return "Lower Body"
+        elif choice == "3":
+            return "Stretching"
+        else:
+            print("Invalid choice. Please try again.")
 
 
 def get_duration_minutes():

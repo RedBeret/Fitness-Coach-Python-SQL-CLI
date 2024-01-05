@@ -2,11 +2,13 @@
 
 import random
 import sqlite3
+import time
 from datetime import date, datetime
 
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import Progress
 from rich.table import Table
 
 console = Console()
@@ -15,7 +17,7 @@ from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 from lib.models.workout import Workout
 
-from .helpers import (  # get_workout_type,
+from .helpers import (
     confirm_action,
     delete_user,
     display_workout_details,
@@ -23,6 +25,7 @@ from .helpers import (  # get_workout_type,
     exit_program,
     get_duration_minutes,
     get_valid_input,
+    get_workout_type,
     list_all_exercises,
     list_workouts_for_selection,
     select_exercise_from_list,
@@ -341,6 +344,13 @@ def quick_start_workout(current_user):
             duration_minutes = get_duration_minutes()
 
             selected_exercises = generate_random_workout(duration_minutes, workout_type)
+            with Progress() as progress:
+                task = progress.add_task(
+                    "[cyan]Generating Personalized workout...", total=30
+                )
+                while not progress.finished:
+                    progress.update(task, advance=0.5)
+                    time.sleep(0.05)
             if selected_exercises:
                 workout_instance = Workout.create(
                     username=current_user.username,
