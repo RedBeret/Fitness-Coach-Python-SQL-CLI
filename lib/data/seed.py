@@ -33,6 +33,18 @@ CREATE TABLE IF NOT EXISTS exercises (
 
 cursor.execute(
     """
+    CREATE TABLE IF NOT EXISTS workouts (
+      id INTEGER PRIMARY KEY,
+      username VARCHAR NOT NULL REFERENCES users(username),
+      date DATE NOT NULL,
+      workout_duration INTEGER NOT NULL,
+      goal VARCHAR NOT NULL
+    );
+    """
+)
+
+cursor.execute(
+    """
 CREATE TABLE IF NOT EXISTS user_workouts (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL,

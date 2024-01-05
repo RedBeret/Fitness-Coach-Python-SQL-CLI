@@ -6,6 +6,8 @@ from tabulate import tabulate
 
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
+from lib.models.workout import Workout
+
 
 # CONN = sqlite3.connect("./lib/data/workout_plans.db")
 # CURSOR = CONN.cursor()
@@ -19,8 +21,9 @@ from .helpers import (
     get_valid_input,
     get_workout_type,
     list_all_exercises,
-    list_user_workouts,
+    list_workouts,
     select_exercise_from_list,
+    create_workout,
 )
 from .models.exercise import Exercise
 
@@ -55,7 +58,7 @@ def main_menu(current_user):
         elif choice == "2":
             user_management_menu(current_user)
         elif choice == "3":
-            workout_management_menu()
+            workout_management_menu(current_user)
         elif choice == "4":
             exercise_management_menu(current_user)
         elif choice == "0":
@@ -81,7 +84,7 @@ def user_management_menu(current_user):
 
 
 # --- Workout Management Functions ---
-def workout_management_menu():
+def workout_management_menu(current_user):
     while True:
         print("\nWorkout Management")
         print("1: Create New Workout")
@@ -93,7 +96,7 @@ def workout_management_menu():
         if choice == "1":
             create_workout()
         elif choice == "2":
-            list_workouts()
+            list_workouts(current_user.username)
         elif choice == "3":
             update_workout()
         elif choice == "4":
@@ -251,6 +254,18 @@ def quick_start_workout(current_user):
     workout_plan = generate_random_workout(exercises, duration_minutes)
     if workout_plan:
         display_workout_plan(workout_plan)
+
+        # Create and save the workout instance to the database.
+
+        try:
+            workout_instance = Workout.create(
+                username=current_user,
+                workout_duration=duration_minutes,
+                goal=workout_type,
+            )
+            print("Workout saved successfully.")
+        except Exception as e:
+            print(f"Error saving workout: {e}")
     else:
         print("Unable to generate a workout plan for the specified duration.")
 
@@ -258,12 +273,24 @@ def quick_start_workout(current_user):
         print("\nChoose an option:")
         print("1: Generate a Different Workout")
         print("2: Return to Main Menu")
+
         choice = input("Please choose an option: ")
 
         if choice == "1":
             workout_plan = generate_random_workout(exercises, duration_minutes)
             if workout_plan:
                 display_workout_plan(workout_plan)
+
+                # Create and save the workout instance to the database.
+            try:
+                workout_instance = Workout.create(
+                    username=current_user,
+                    workout_duration=duration_minutes,
+                    goal=workout_type,
+                )
+                print("Workout saved successfully.")
+            except Exception as e:
+                print(f"Error saving workout: {e}")
             else:
                 print("Unable to generate a workout plan for the specified duration.")
         elif choice == "2":

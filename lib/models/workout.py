@@ -1,8 +1,9 @@
-from models.__init__ import CONN, CURSOR
+from .__init__ import CONN, CURSOR
+from datetime import date as dt_date
 
 
 class Workout:
-    all = []
+    all = {}
 
     def __init__(self, username, date, id=None, workout_duration=None, goal=None):
         self.username = username
@@ -31,9 +32,7 @@ class Workout:
 
     @date.setter
     def date(self, date):
-        if not isinstance(date, str):
-            raise TypeError("Date must be a string")
-        elif not len(date) > 0:
+        if not len(date) > 0:
             raise ValueError("Date cannot be empty")
         else:
             self._date = date
@@ -111,10 +110,17 @@ class Workout:
         conn.commit()
 
     @classmethod
-    def create(cls, username, date, workout_duration, goal):
-        if not username or not date or not workout_duration or not goal:
-            raise ValueError("All fields cannot be empty.")
-        cls(username, date, workout_duration, goal).save()
+    def create(cls, username, workout_duration, goal, date=dt_date.today()):
+        # Validation of input parameters
+        if not username or not workout_duration or not goal:
+            raise ValueError("Username, workout duration, and goal cannot be empty.")
+
+        # Creating a new workout instance
+        workout = cls(
+            username=username, date=date, workout_duration=workout_duration, goal=goal
+        )
+        workout.save()
+        return workout
 
     @classmethod
     def instance_from_db(cls, id):
@@ -123,10 +129,10 @@ class Workout:
         return cls(*workout) if workout else None
 
     @classmethod
-    def get_all(cls):
+    def get_all(cls, username):
         CURSOR.execute("SELECT * FROM workouts")
         workouts = CURSOR.fetchall()
-        return [cls(*workout) for workout in workouts]
+        return [cls(*workout) for workout in workouts if workout[1] == username]
 
     @classmethod
     def find_by_id(cls, id):
@@ -134,14 +140,28 @@ class Workout:
         record = CURSOR.fetchone()
         return cls(*record) if record else None
 
-    def save(self):
-        CURSOR.execute(
-            "INSERT INTO workouts (username, date, workout_duration, goal) VALUES (?, ?, ?, ?)",
-            (self.username, self.date, self.workout_duration, self.goal),
-        )
-        CONN.commit()
-        self.id = CURSOR.lastrowid
-        self.__class__.all[self.id] = self
+
+def save(self):
+    try:
+        if self.id is None:
+            # Insert a new workout record
+            CURSOR.execute(
+                """
+                INSERT INTO workouts (username, date, workout_duration, goal)
+                VALUES (?, ?, ?, ?)
+                """,
+                (self.username, self.date, self.workout_duration, self.goal),
+            )
+            CONN.commit()
+            self.id = CURSOR.lastrowid
+            self.__class__.all[
+                self.id
+            ] = self  # Assuming you maintain a class-level dictionary for all instances
+        else:
+            # Update an existing workout record
+            self.update(self.username, self.date, self.workout_duration, self.goal)
+    except sqlite3.Error as database_error:
+        print(f"An error occurred while saving the workout: {database_error}")
 
     def update(self, username, date, workout_duration, goal):
         if not username or not date or not workout_duration or not goal:
