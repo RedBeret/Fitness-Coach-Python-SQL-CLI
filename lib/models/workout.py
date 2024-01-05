@@ -15,7 +15,8 @@ class Workout:
         self.id = id
         self.workout_duration = workout_duration
         self.goal = goal
-        self.date = date if date else str(dt_date.today())
+        self.date = date or str(dt_date.today())
+        self.exercises = []
         self.all[self.id] = self
 
     @property
@@ -119,7 +120,7 @@ class Workout:
     @classmethod
     def create(cls, username, workout_duration, goal, date=None):
         if not date:
-            date = date.today().isoformat()
+            date = dt_date.today().isoformat()  # Use dt_date to avoid naming conflict
 
         if not username or not workout_duration or not goal:
             raise ValueError("Username, workout duration, and goal cannot be empty.")
@@ -175,27 +176,31 @@ class Workout:
     def save(self):
         try:
             if self.id is None:
+                # Insert a new workout record
                 CURSOR.execute(
                     """
-                        INSERT INTO user_workouts (user_id, date, duration, goal)
-                        VALUES ((SELECT id FROM users WHERE username = ?), ?, ?, ?)
-                        """,
+                    INSERT INTO user_workouts (user_id, date, duration, goal)
+                    VALUES ((SELECT id FROM users WHERE username = ?), ?, ?, ?)
+                    """,
                     (self.username, self.date, self.workout_duration, self.goal),
                 )
                 CONN.commit()
                 self.id = CURSOR.lastrowid
                 self.__class__.all[self.id] = self
             else:
-                # If the workout already has an ID, update the record
+                # Update an existing workout record
                 CURSOR.execute(
                     """
-                        UPDATE user_workouts SET date=?, duration=?, goal=? WHERE id=?
-                        """,
+                    UPDATE user_workouts
+                    SET date=?, duration=?, goal=?
+                    WHERE id=?
+                    """,
                     (self.date, self.workout_duration, self.goal, self.id),
                 )
                 CONN.commit()
-        except sqlite3.Error as database_error:
-            print(f"An error occurred while saving the workout: {database_error}")
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            CONN.rollback()
 
     @classmethod
     def delete_by_id(cls, workout_id):
