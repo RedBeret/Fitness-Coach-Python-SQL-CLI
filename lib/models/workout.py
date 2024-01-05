@@ -1,6 +1,7 @@
 from datetime import date as dt_date
 
 from .__init__ import CONN, CURSOR
+from .exercise import Exercise
 
 
 class Workout:
@@ -149,6 +150,19 @@ class Workout:
         ]
 
     @classmethod
+    def get_exercises(cls, workout_id):
+        CURSOR.execute(
+            """
+            SELECT e.id, e.name, e.sets, e.reps_per_set, e.duration_minutes, e.muscle_group 
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id 
+            WHERE we.workout_id = ?
+        """,
+            (workout_id,),
+        )
+        return [Exercise(*row) for row in CURSOR.fetchall()]
+
+    @classmethod
     def find_by_id(cls, id):
         CURSOR.execute("SELECT * FROM user_workouts WHERE id=?", (id,))
         record = CURSOR.fetchone()
@@ -179,17 +193,10 @@ class Workout:
         except sqlite3.Error as database_error:
             print(f"An error occurred while saving the workout: {database_error}")
 
-    def delete(self):
-        try:
-            # First delete the associated exercises from workout_exercises
-            CURSOR.execute(
-                "DELETE FROM workout_exercises WHERE workout_id=?", (self.id,)
-            )
-
-            # Then delete the workout itself from user_workouts
-            CURSOR.execute("DELETE FROM user_workouts WHERE id=?", (self.id,))
-
-            CONN.commit()
-            del self.__class__.all[self.id]
-        except sqlite3.Error as database_error:
-            print(f"An error occurred while deleting the workout: {database_error}")
+    @classmethod
+    def delete_by_id(cls, workout_id):
+        CURSOR.execute(
+            "DELETE FROM workout_exercises WHERE workout_id = ?", (workout_id,)
+        )
+        CURSOR.execute("DELETE FROM user_workouts WHERE id = ?", (workout_id,))
+        CONN.commit()

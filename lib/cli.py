@@ -13,6 +13,7 @@ from lib.models.workout import Workout
 from .helpers import (  # create_workout,; delete_workout,; list_workouts,
     confirm_action,
     delete_user,
+    display_workout_details,
     display_workout_plan,
     exit_program,
     generate_random_workout,
@@ -20,7 +21,9 @@ from .helpers import (  # create_workout,; delete_workout,; list_workouts,
     get_valid_input,
     get_workout_type,
     list_all_exercises,
+    list_workouts_for_selection,
     select_exercise_from_list,
+    select_workout_id,
 )
 from .models.exercise import Exercise
 
@@ -115,25 +118,43 @@ def create_workout(current_user):
 
 
 def list_workouts(current_user):
-    user_workouts = Workout.get_all(current_user.username)
-
-    if not user_workouts:
-        print(f"No workouts found for {current_user.username}.")
+    workouts = list_workouts_for_selection(current_user.username)
+    if workouts is None:
         return
 
-    headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
-    workout_data = []
+    workout_id = select_workout_id(
+        "Enter the ID of a workout to view its details, or '0' to return: "
+    )
+    if workout_id > 0:
+        print("Sorry, this feature is not yet implemented.")
+        # Future implementation: display_workout_details(workout_id)
+    else:
+        return
 
-    for workout_instance in user_workouts:
-        workout_info = [
-            workout_instance.id,
-            workout_instance.date,
-            workout_instance.workout_duration,
-            workout_instance.goal,
-        ]
-        workout_data.append(workout_info)
 
-    print(tabulate(workout_data, headers, tablefmt="grid"))
+def delete_workout(current_user):
+    workouts = list_workouts_for_selection(current_user.username)
+    if workouts is None:
+        return
+
+    workout_id = select_workout_id(
+        "Enter the ID of the workout to delete, or '0' to cancel: "
+    )
+    if workout_id == 0:
+        print("Deletion cancelled.")
+        return
+
+    confirm = input(
+        f"Are you sure you want to delete workout ID {workout_id}? (yes/no): "
+    )
+    if confirm.lower() == "yes":
+        try:
+            Workout.delete_by_id(workout_id)
+            print(f"Workout ID {workout_id} has been deleted.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        print("Deletion cancelled.")
 
 
 # --- Exercise Management Functions ---

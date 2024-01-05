@@ -105,56 +105,51 @@ def confirm_action(prompt):
             print("Please enter 'yes' or 'no'.")
 
 
-# Workout Management Functions
+def display_workout_details(workout_id):
+    exercises = Workout.get_exercises(workout_id)
+    if not exercises:
+        print("No exercises found for this workout.")
+        return
+
+    headers = ["ID", "Name", "Sets", "Reps", "Duration (Min)", "Muscle Group"]
+    exercise_data = [
+        [ex.id, ex.name, ex.sets, ex.reps_per_set, ex.duration_minutes, ex.muscle_group]
+        for ex in exercises
+    ]
+    print(tabulate(exercise_data, headers, tablefmt="grid"))
 
 
-# def create_workout():
-#     workout_type = get_workout_type()
-#     duration = int(input("Enter the workout duration in minutes: "))
-#     workout = Workout(workout_type, duration)
+def select_workout_id(prompt):
+    while True:
+        workout_id = input(prompt)
+        if workout_id.isdigit():
+            return int(workout_id)
+        elif workout_id == "0":
+            return 0
+        else:
+            print("Invalid input. Please enter a numeric ID or '0' to return.")
 
 
-# def list_workouts(username):
-#     # Get all workouts for the given user
-#     user_workouts = Workout.get_all(username)
-#     if not user_workouts:
-#         print("No workouts found.")
-#         return None
+def list_workouts_for_selection(username):
+    user_workouts = Workout.get_all(username)
+    if not user_workouts:
+        print(f"No workouts found for {username}.")
+        return None
 
-#     # For each workout, get the associated exercises
-#     workout_data = []
-#     for user_workout in user_workouts:
-#         workout_id = user_workout.workout_id
-#         workout = Workout.get(id=workout_id)
-#         workout_date = workout.date
-#         workout_duration = workout.workout_duration
-#         workout_goal = workout.goal
+    headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
+    workout_data = []
 
-#         # Get all exercises for this workout
-#         workout_exercises = WorkoutExercise.get_all(where={"workout_id": workout_id})
-#         exercise_names = ", ".join(
-#             [
-#                 str(WorkoutExercise.get(id=we.exercise_id).name)
-#                 for we in workout_exercises
-#             ]
-#         )
+    for workout_instance in user_workouts:
+        workout_info = [
+            workout_instance.id,
+            workout_instance.date,
+            workout_instance.workout_duration,
+            workout_instance.goal,
+        ]
+        workout_data.append(workout_info)
 
-#         workout_info = [
-#             workout_id,
-#             workout_date,
-#             workout_duration,
-#             workout_goal,
-#             exercise_names,
-#         ]
-#         workout_data.append(workout_info)
-
-#     headers = ["ID", "Date", "Duration (Min)", "Goal", "Exercises"]
-#     print(tabulate(workout_data, headers, tablefmt="grid"))
-#     return user_workouts
-
-
-# def delete_workout():
-#     pass
+    print(tabulate(workout_data, headers, tablefmt="grid"))
+    return user_workouts
 
 
 # Misc Functions
