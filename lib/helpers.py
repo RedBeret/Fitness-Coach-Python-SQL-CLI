@@ -5,6 +5,7 @@ from tabulate import tabulate
 
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.exercise import Exercise
+from lib.models.workout import Workout
 
 
 def delete_user(current_user):
@@ -104,20 +105,51 @@ def confirm_action(prompt):
             print("Please enter 'yes' or 'no'.")
 
 
-# Workout Management Functions
-# def create_workout():
-#     workout_type = get_workout_type()
-#     duration = int(input("Enter the workout duration in minutes: "))
-#     workout = Workout(workout_type, duration)
-#     pass
+def display_workout_details(workout_id):
+    exercises = Workout.get_exercises(workout_id)
+    if not exercises:
+        print("No exercises found for this workout.")
+        return
+
+    headers = ["ID", "Name", "Sets", "Reps", "Duration (Min)", "Muscle Group"]
+    exercise_data = [
+        [ex.id, ex.name, ex.sets, ex.reps_per_set, ex.duration_minutes, ex.muscle_group]
+        for ex in exercises
+    ]
+    print(tabulate(exercise_data, headers, tablefmt="grid"))
 
 
-def list_user_workouts():
-    pass
+def select_workout_id(prompt):
+    while True:
+        workout_id = input(prompt)
+        if workout_id.isdigit():
+            return int(workout_id)
+        elif workout_id == "0":
+            return 0
+        else:
+            print("Invalid input. Please enter a numeric ID or '0' to return.")
 
 
-def delete_workout():
-    pass
+def list_workouts_for_selection(username):
+    user_workouts = Workout.get_all(username)
+    if not user_workouts:
+        print(f"No workouts found for {username}.")
+        return None
+
+    headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
+    workout_data = []
+
+    for workout_instance in user_workouts:
+        workout_info = [
+            workout_instance.id,
+            workout_instance.date,
+            workout_instance.workout_duration,
+            workout_instance.goal,
+        ]
+        workout_data.append(workout_info)
+
+    print(tabulate(workout_data, headers, tablefmt="grid"))
+    return user_workouts
 
 
 # Misc Functions
@@ -166,22 +198,45 @@ def display_workout_plan(workout_plan):
     print(tabulate(table_data, headers, tablefmt="grid"))
 
 
-def generate_random_workout(exercises, duration_minutes):
+def generate_random_workout(duration_minutes, workout_type):
+    CURSOR.execute("SELECT * FROM exercises WHERE muscle_group = ?", (workout_type,))
+    exercises = [Exercise(*row) for row in CURSOR.fetchall()]
+
+    if not exercises:
+        print(f"No exercises found for {workout_type} workout.")
+        return None
+
     workout_plan = []
     current_duration = 0
 
     while current_duration < duration_minutes:
-        random.shuffle(exercises)
-        added_exercise = False
-        for exercise in exercises:
-            exercise_duration = exercise["Duration (Min)"]
-            if current_duration + exercise_duration <= duration_minutes:
-                workout_plan.append(exercise)
-                current_duration += exercise_duration
-                added_exercise = True
-                break
-        if not added_exercise:
+        # Filter exercises that can fit in the remaining duration
+        available_exercises = [
+            exercise
+            for exercise in exercises
+            if exercise.duration_minutes <= (duration_minutes - current_duration)
+        ]
+        if not available_exercises:
             break
+
+        exercise = random.choice(available_exercises)
+        exercise_duration = exercise.duration_minutes
+        workout_plan.append(
+            {
+                "Exercise Name": exercise.name,
+                "Sets": exercise.sets,
+                "Reps": exercise.reps_per_set,
+                "Duration (Min)": exercise_duration,
+            }
+        )
+        current_duration += exercise_duration
+
+    if current_duration < duration_minutes:
+        print(
+            f"Unable to generate a workout plan for the specified duration. Duration exceeded."
+        )
+        return None
+
     return workout_plan
 
 

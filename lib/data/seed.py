@@ -92,13 +92,13 @@ workouts = [
         "user_id": 1,
         "date": "2024-01-03",
         "workout_duration": 60,
-        "goal": "Strength Training",
+        "goal": "Strength",
     },
     {
         "user_id": 2,
         "date": "2024-01-04",
         "workout_duration": 45,
-        "goal": "Abs",
+        "goal": "Strength",
     },
 ]
 

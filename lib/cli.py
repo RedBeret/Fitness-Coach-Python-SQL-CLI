@@ -1,17 +1,20 @@
 # lib/cli.py
 
 import sqlite3
+from datetime import date
 
 from tabulate import tabulate
 
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
+from lib.models.workout import Workout
 
 # CONN = sqlite3.connect("./lib/data/workout_plans.db")
 # CURSOR = CONN.cursor()
-from .helpers import (
+from .helpers import (  # create_workout,; delete_workout,; list_workouts,
     confirm_action,
     delete_user,
+    display_workout_details,
     display_workout_plan,
     exit_program,
     generate_random_workout,
@@ -19,8 +22,9 @@ from .helpers import (
     get_valid_input,
     get_workout_type,
     list_all_exercises,
-    list_user_workouts,
+    list_workouts_for_selection,
     select_exercise_from_list,
+    select_workout_id,
 )
 from .models.exercise import Exercise
 
@@ -55,7 +59,7 @@ def main_menu(current_user):
         elif choice == "2":
             user_management_menu(current_user)
         elif choice == "3":
-            workout_management_menu()
+            workout_management_menu(current_user)
         elif choice == "4":
             exercise_management_menu(current_user)
         elif choice == "0":
@@ -81,27 +85,77 @@ def user_management_menu(current_user):
 
 
 # --- Workout Management Functions ---
-def workout_management_menu():
+def workout_management_menu(current_user):
     while True:
         print("\nWorkout Management")
-        print("1: Create New Workout")
-        print("2: View All Workouts")
-        print("3: Update Workout")
-        print("4: Delete Workout")
+        print("1: View All Workouts")
+        print("2: Delete Workout")
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
-            create_workout()
+            list_workouts(current_user)
+
         elif choice == "2":
-            list_workouts()
-        elif choice == "3":
-            update_workout()
-        elif choice == "4":
-            delete_workout()
+            delete_workout(current_user)
         elif choice == "0":
             main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
+
+
+def create_workout(current_user):
+    workout_type = get_workout_type()
+    duration = int(input("Enter the workout duration in minutes: "))
+
+    try:
+        workout_instance = Workout.create(
+            username=current_user.username,
+            workout_duration=duration,
+            goal=workout_type,
+        )
+        print("Workout saved successfully.")
+    except Exception as e:
+        print(f"Error saving workout: {e}")
+
+
+def list_workouts(current_user):
+    workouts = list_workouts_for_selection(current_user.username)
+    if workouts is None:
+        return
+
+    workout_id = select_workout_id(
+        "Enter the ID of a workout to view its details, or '0' to return: "
+    )
+    if workout_id > 0:
+        print("Sorry, this feature is not yet implemented.")
+        # Future implementation: display_workout_details(workout_id)
+    else:
+        return
+
+
+def delete_workout(current_user):
+    workouts = list_workouts_for_selection(current_user.username)
+    if workouts is None:
+        return
+
+    workout_id = select_workout_id(
+        "Enter the ID of the workout to delete, or '0' to cancel: "
+    )
+    if workout_id == 0:
+        print("Deletion cancelled.")
+        return
+
+    confirm = input(
+        f"Are you sure you want to delete workout ID {workout_id}? (yes/no): "
+    )
+    if confirm.lower() == "yes":
+        try:
+            Workout.delete_by_id(workout_id)
+            print(f"Workout ID {workout_id} has been deleted.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        print("Deletion cancelled.")
 
 
 # --- Exercise Management Functions ---
@@ -235,41 +289,28 @@ def delete_exercise():
 
 def quick_start_workout(current_user):
     print("\nQuick Start Workout")
-    # gets workout type from user
-    workout_type = get_workout_type()
-    # gets duration from user
+    workout_type = get_workout_type()  # This can be any string chosen by the user
     duration_minutes = get_duration_minutes()
 
-    # Just a placeholder for now to not error out and cycle.
-    # Total time (mins, rounded) = round(((sets * reps * time_per_rep_3sec) + ((sets - 1) * rest_between_sets_45sec) + setup_time_10sec) / 60)
-
-    exercises = [
-        {"Exercise Name": "Push-Ups", "Sets": 3, "Reps": 12, "Duration (Min)": 3},
-        {"Exercise Name": "Squats", "Sets": 3, "Reps": 10, "Duration (Min)": 3},
-    ]
-
-    workout_plan = generate_random_workout(exercises, duration_minutes)
+    workout_plan = generate_random_workout(workout_type, duration_minutes)
     if workout_plan:
         display_workout_plan(workout_plan)
+
+        current_date = datetime.today().strftime("%Y-%m-%d")
+        try:
+            workout_instance = Workout.create(
+                username=current_user.username,
+                date=current_date,  # Make sure the date is passed here
+                workout_duration=duration_minutes,
+                goal=workout_type,
+            )
+            print("Workout saved successfully.")
+        except Exception as e:
+            print(f"Error saving workout: {e}")
     else:
         print("Unable to generate a workout plan for the specified duration.")
 
-    while True:
-        print("\nChoose an option:")
-        print("1: Generate a Different Workout")
-        print("2: Return to Main Menu")
-        choice = input("Please choose an option: ")
-
-        if choice == "1":
-            workout_plan = generate_random_workout(exercises, duration_minutes)
-            if workout_plan:
-                display_workout_plan(workout_plan)
-            else:
-                print("Unable to generate a workout plan for the specified duration.")
-        elif choice == "2":
-            main_menu(current_user)
-        else:
-            print("Invalid choice. Please try again.")
+    main_menu(current_user)
 
 
 if __name__ == "__main__":
