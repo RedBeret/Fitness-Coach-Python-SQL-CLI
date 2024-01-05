@@ -1,11 +1,17 @@
 # lib/helpers.py
 import random
 
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 from tabulate import tabulate
 
 from lib.models.__init__ import CONN, CURSOR
 from lib.models.exercise import Exercise
 from lib.models.workout import Workout
+
+console = Console()
 
 # User Helpers
 
@@ -44,31 +50,28 @@ def delete_user_workouts(user_id):
 def list_all_exercises():
     exercises = Exercise.get_all()
     if not exercises:
-        print("No exercises found.")
+        console.print(Panel("No exercises found.", style="bold red"))
         return None
 
-    headers = ["ID", "Name", "Sets", "Reps", "Duration (Min)", "Muscle Group"]
-    exercise_data = []
+    exercise_table = Table(show_header=True, header_style="bold green")
+    exercise_table.add_column("ID", justify="right")
+    exercise_table.add_column("Name")
+    exercise_table.add_column("Sets", justify="right")
+    exercise_table.add_column("Reps", justify="right")
+    exercise_table.add_column("Duration (Min)", justify="right")
+    exercise_table.add_column("Muscle Group")
 
     for exercise in exercises:
-        exercise_id = exercise.id
-        exercise_name = str(exercise.name)
-        exercise_sets = exercise.sets
-        exercise_reps = exercise.reps_per_set
-        exercise_duration = exercise.duration_minutes
-        exercise_category = exercise.muscle_group
+        exercise_table.add_row(
+            str(exercise.id),
+            exercise.name,
+            str(exercise.sets),
+            str(exercise.reps_per_set),
+            str(exercise.duration_minutes),
+            exercise.muscle_group,
+        )
 
-        exercise_info = [
-            exercise_id,
-            exercise_name,
-            exercise_sets,
-            exercise_reps,
-            exercise_duration,
-            exercise_category,
-        ]
-        exercise_data.append(exercise_info)
-
-    print(tabulate(exercise_data, headers, tablefmt="grid"))
+    console.print(exercise_table)
     return exercises
 
 
@@ -117,41 +120,43 @@ def select_workout_id(prompt):
 def list_workouts_for_selection(username):
     user_workouts = Workout.get_all(username)
     if not user_workouts:
-        print(f"No workouts found for {username}.")
+        console.print(Panel(f"No workouts found for {username}.", style="bold red"))
         return None
 
-    headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
-    workout_data = []
+    workout_table = Table(box=box.ROUNDED, show_header=True, header_style="bold blue")
+    workout_table.add_column("Workout ID", justify="right")
+    workout_table.add_column("Date")
+    workout_table.add_column("Duration (Min)", justify="right")
+    workout_table.add_column("Goal")
 
-    for workout_instance in user_workouts:
-        workout_info = [
-            workout_instance.id,
-            workout_instance.date,
-            workout_instance.workout_duration,
-            workout_instance.goal,
-        ]
-        workout_data.append(workout_info)
+    for workout in user_workouts:
+        workout_table.add_row(
+            str(workout.id),
+            str(workout.date),
+            str(workout.workout_duration),
+            workout.goal,
+        )
 
-    print(tabulate(workout_data, headers, tablefmt="grid"))
+    console.print(workout_table)
     return user_workouts
 
 
-def get_workout_type():
-    while True:
-        print("Choose a workout type:")
-        print("1: Upper Body")
-        print("2: Lower Body")
-        print("3: Stretching")
-        choice = input("Please choose an option: ")
+# def get_workout_type():
+#     while True:
+#         print("Choose a workout type:")
+#         print("1: Upper Body")
+#         print("2: Lower Body")
+#         print("3: Stretching")
+#         choice = input("Please choose an option: ")
 
-        if choice == "1":
-            return "Upper Body"
-        elif choice == "2":
-            return "Lower Body"
-        elif choice == "3":
-            return "Stretching"
-        else:
-            print("Invalid choice. Please try again.")
+#         if choice == "1":
+#             return "Upper Body"
+#         elif choice == "2":
+#             return "Lower Body"
+#         elif choice == "3":
+#             return "Stretching"
+#         else:
+#             print("Invalid choice. Please try again.")
 
 
 def get_duration_minutes():
@@ -166,12 +171,12 @@ def get_duration_minutes():
 
 def display_workout_plan(exercise_ids):
     headers = ["Exercise Name", "Sets", "Reps", "Duration (Min)"]
-    table_data = []
+    exercise_data = []
 
     for exercise_id in exercise_ids:
         exercise = Exercise.instance_from_db(exercise_id)
         if exercise:
-            table_data.append(
+            exercise_data.append(
                 [
                     exercise.name,
                     exercise.sets,
@@ -180,7 +185,16 @@ def display_workout_plan(exercise_ids):
                 ]
             )
 
-    print(tabulate(table_data, headers, tablefmt="grid"))
+    table = Table(box=box.ROUNDED, show_header=True, header_style="bold green")
+    table.add_column("Exercise Name")
+    table.add_column("Sets", justify="right")
+    table.add_column("Reps", justify="right")
+    table.add_column("Duration (Min)", justify="right")
+
+    for data in exercise_data:
+        table.add_row(data[0], str(data[1]), str(data[2]), str(data[3]))
+
+    console.print(table)
 
 
 # Data Validation Helpers
