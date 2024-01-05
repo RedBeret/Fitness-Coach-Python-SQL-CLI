@@ -1,4 +1,7 @@
 from datetime import date as dt_date
+from datetime import datetime
+
+current_date = datetime.today().strftime("%Y-%m-%d")
 
 from .__init__ import CONN, CURSOR
 from .exercise import Exercise
@@ -82,8 +85,8 @@ class Workout:
     def goal(self, goal):
         if not isinstance(goal, str):
             raise TypeError("Goal must be a string")
-        elif goal not in ["Strength", "Cardio", "Hybrid"]:
-            raise ValueError("Goal must be either 'Strength', 'Cardio', or 'Hybrid'")
+        elif not goal:
+            raise ValueError("Goal cannot be empty")
         else:
             self._goal = goal
 
@@ -114,12 +117,13 @@ class Workout:
         conn.commit()
 
     @classmethod
-    def create(cls, username, workout_duration, goal, date=dt_date.today()):
-        # Validation of input parameters
+    def create(cls, username, workout_duration, goal, date=None):
+        if not date:
+            date = date.today().isoformat()
+
         if not username or not workout_duration or not goal:
             raise ValueError("Username, workout duration, and goal cannot be empty.")
 
-        # Creating a new workout instance
         workout = cls(
             username=username, date=date, workout_duration=workout_duration, goal=goal
         )
