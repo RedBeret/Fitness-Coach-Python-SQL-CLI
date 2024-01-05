@@ -10,7 +10,6 @@ from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 from lib.models.workout import Workout
 
-
 from .helpers import (
     confirm_action,
     delete_user,
@@ -256,12 +255,10 @@ def update_exercise():
         "Invalid input. Please enter a positive number.",
     )
 
-    # Update the exercise object with the new values
     exercise.sets = new_sets
     exercise.reps_per_set = new_reps_per_set
     exercise.duration_minutes = new_duration_minutes
 
-    # Save the updated exercise to the database
     exercise.update()
 
     print(f"Exercise {exercise.name} has been updated successfully.")
@@ -291,18 +288,14 @@ def quick_start_workout(current_user):
     workout_type = get_workout_type()
     duration_minutes = get_duration_minutes()
 
-    selected_exercises, total_duration = generate_random_workout(
-        duration_minutes, workout_type
-    )
+    selected_exercises = generate_random_workout(duration_minutes, workout_type)
     if selected_exercises:
-        # Save the workout
         workout_instance = Workout.create(
             username=current_user.username,
-            workout_duration=total_duration,
+            workout_duration=duration_minutes,
             goal=workout_type,
         )
 
-        # Save the associated exercises
         for exercise_id in selected_exercises:
             CURSOR.execute(
                 "INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)",
@@ -311,9 +304,7 @@ def quick_start_workout(current_user):
         CONN.commit()
 
         print("Workout saved successfully.")
-        display_workout_plan(
-            selected_exercises
-        )  # Adjust this function to display exercises by ID
+        display_workout_plan(selected_exercises)
     else:
         print("Unable to generate a workout plan for the specified duration.")
 
@@ -330,7 +321,7 @@ def generate_random_workout(duration_minutes, workout_type):
 
     if not exercises:
         print(f"No exercises found for {workout_type} workout.")
-        return None, 0
+        return []
 
     selected_exercises = []
     current_duration = 0
@@ -349,7 +340,10 @@ def generate_random_workout(duration_minutes, workout_type):
         selected_exercises.append(exercise_id)
         current_duration += exercise_duration
 
-    return selected_exercises, current_duration
+        if current_duration >= duration_minutes:
+            break
+
+    return selected_exercises
 
 
 if __name__ == "__main__":
