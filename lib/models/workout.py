@@ -18,6 +18,14 @@ class Workout:
         self.date = date or str(dt_date.today())
         self.all[self.id] = self
 
+    def __repr__(self):
+        return f"<Workout {self.id}>"
+
+    def __str__(self):
+        return f"Workout ID: {self.id}, Date: {self.date}, Username: {self.username}, Workout Duration: {self.workout_duration}, Goal: {self.goal}"
+
+    # Class Properties
+
     @property
     def username(self):
         return self._username
@@ -67,11 +75,7 @@ class Workout:
         else:
             self._goal = goal
 
-    def __repr__(self):
-        return f"<Workout {self.id}>"
-
-    def __str__(self):
-        return f"Workout ID: {self.id}, Date: {self.date}, Username: {self.username}, Workout Duration: {self.workout_duration}, Goal: {self.goal}"
+    # Class Methods
 
     @classmethod
     def create_table(cls, conn, cursor):
@@ -149,6 +153,16 @@ class Workout:
         record = CURSOR.fetchone()
         return cls(*record) if record else None
 
+    @classmethod
+    def delete_by_id(cls, workout_id):
+        CURSOR.execute(
+            "DELETE FROM workout_exercises WHERE workout_id = ?", (workout_id,)
+        )
+        CURSOR.execute("DELETE FROM user_workouts WHERE id = ?", (workout_id,))
+        CONN.commit()
+
+    # CRUD Operations
+
     def save(self):
         try:
             if self.id is None:
@@ -172,11 +186,3 @@ class Workout:
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             CONN.rollback()
-
-    @classmethod
-    def delete_by_id(cls, workout_id):
-        CURSOR.execute(
-            "DELETE FROM workout_exercises WHERE workout_id = ?", (workout_id,)
-        )
-        CURSOR.execute("DELETE FROM user_workouts WHERE id = ?", (workout_id,))
-        CONN.commit()

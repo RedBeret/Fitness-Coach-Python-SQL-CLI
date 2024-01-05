@@ -26,6 +26,14 @@ class Exercise:
         self.reps_per_set = reps_per_set
         self.duration_minutes = duration_minutes
 
+    def __repr__(self):
+        return f"<Exercise {self.name}>"
+
+    def __str__(self):
+        return f"{self.name}: {self.description}"
+
+    # Class Properties
+
     @property
     def name(self):
         return self._name
@@ -51,12 +59,6 @@ class Exercise:
             raise ValueError("Description cannot be empty")
         else:
             self._description = description
-
-    def __repr__(self):
-        return f"<Exercise {self.name}>"
-
-    def __str__(self):
-        return f"{self.name}: {self.description}"
 
     @property
     def instructions(self):
@@ -194,6 +196,8 @@ class Exercise:
         CURSOR.execute("SELECT * FROM exercises WHERE name=?", (name,))
         record = CURSOR.fetchone()
         return cls(*record) if record else None
+
+    # CRUD Operations
 
     def save(self):
         try:
