@@ -8,12 +8,13 @@ from lib.models.__init__ import CONN, CURSOR
 from lib.models.user import User
 from lib.models.workout import Workout
 
-
 # CONN = sqlite3.connect("./lib/data/workout_plans.db")
 # CURSOR = CONN.cursor()
 from .helpers import (
     confirm_action,
+    create_workout,
     delete_user,
+    delete_workout,
     display_workout_plan,
     exit_program,
     generate_random_workout,
@@ -23,8 +24,6 @@ from .helpers import (
     list_all_exercises,
     list_workouts,
     select_exercise_from_list,
-    create_workout,
-    delete_workout,
 )
 from .models.exercise import Exercise
 
@@ -88,21 +87,61 @@ def user_management_menu(current_user):
 def workout_management_menu(current_user):
     while True:
         print("\nWorkout Management")
-        print("1: Create New Workout")
-        print("2: View All Workouts")
-        print("3: Delete Workout")
+        print("1: View All Workouts")
+        print("2: Delete Workout")
         print("0: Return to Main Menu")
         choice = input("Please choose an option: ")
         if choice == "1":
-            create_workout()
+            list_workouts(current_user)
+
         elif choice == "2":
-            list_workouts(current_user.username)
-        elif choice == "3":
-            delete_workout()
+            delete_workout(current_user)
         elif choice == "0":
             main_menu(current_user)
         else:
             print("Invalid choice. Please try again.")
+
+
+def create_workout(current_user):
+    workout_type = get_workout_type()
+    duration = int(input("Enter the workout duration in minutes: "))
+
+    try:
+        workout_instance = Workout.create(
+            username=current_user.username,
+            workout_duration=duration,
+            goal=workout_type,
+        )
+        print("Workout saved successfully.")
+    except Exception as e:
+        print(f"Error saving workout: {e}")
+
+
+def list_workouts(current_user):
+    user_workouts = Workout.get_all(current_user.username)
+
+    if not user_workouts:
+        print(f"No workouts found for {current_user.username}.")
+        return
+
+    headers = ["Workout ID", "Date", "Duration (Min)", "Goal"]
+    workout_data = []
+
+    for user_workout in user_workouts:
+        workout_id = user_workout.id
+        workout_date = user_workout.date
+        workout_duration = user_workout.workout_duration
+        workout_goal = user_workout.goal
+
+        workout_info = [
+            workout_id,
+            workout_date,
+            workout_duration,
+            workout_goal,
+        ]
+        workout_data.append(workout_info)
+
+    print(tabulate(workout_data, headers, tablefmt="grid"))
 
 
 # --- Exercise Management Functions ---

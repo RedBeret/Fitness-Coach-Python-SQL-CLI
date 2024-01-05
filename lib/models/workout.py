@@ -1,16 +1,17 @@
-from .__init__ import CONN, CURSOR
 from datetime import date as dt_date
+
+from .__init__ import CONN, CURSOR
 
 
 class Workout:
     all = {}
 
-    def __init__(self, username, date, id=None, workout_duration=None, goal=None):
+    def __init__(self, username, id=None, workout_duration=None, goal=None, date=None):
         self.username = username
-        self.date = date
         self.id = id
         self.workout_duration = workout_duration
         self.goal = goal
+        self.date = date if date else str(dt_date.today())
         self.all[self.id] = self
 
     @property
@@ -19,12 +20,14 @@ class Workout:
 
     @username.setter
     def username(self, username):
-        if not isinstance(username, str):
-            raise TypeError("Username must be a string")
-        elif not len(username) > 0:
-            raise ValueError("Username cannot be empty")
+        if not (isinstance(username, str) and username.isalnum()) and not isinstance(
+            username, int
+        ):
+            raise TypeError(
+                "Username must be a string containing alphanumeric characters or an integer"
+            )
         else:
-            self._username = username
+            self._username = str(username)
 
     @property
     def date(self):
@@ -32,22 +35,21 @@ class Workout:
 
     @date.setter
     def date(self, date):
-        if not len(date) > 0:
-            raise ValueError("Date cannot be empty")
+        if not (isinstance(date, str) and len(date) > 0):
+            raise ValueError("Date must be a non-empty string")
         else:
-            self._date = date
+            self._date = str(date)
 
     @property
     def workout_duration(self):
         # Fetch all exercises associated with the workout
-        CURSOR.execute("SELECT * FROM workout_exercises WHERE workout_id=?", (self.id,))
-        workout_exercises = CURSOR.fetchall()
-
-        # Sum the durations of all exercises
-        total_duration = sum(
-            [exercise["duration_minutes"] for exercise in workout_exercises]
+        CURSOR.execute(
+            "SELECT exercises.duration_minutes FROM workout_exercises INNER JOIN exercises ON workout_exercises.exercise_id = exercises.id WHERE workout_exercises.workout_id=?",
+            (self.id,),
         )
-
+        workout_exercises = CURSOR.fetchall()
+        # Sum the durations of all exercises
+        total_duration = sum(exercise[0] for exercise in workout_exercises)
         return total_duration
 
     @workout_duration.setter
@@ -93,20 +95,20 @@ class Workout:
     def create_table(cls, conn, cursor):
         cursor.execute(
             """
-          CREATE TABLE IF NOT EXISTS workouts (
-              id INTEGER PRIMARY KEY,
-              username VARCHAR,
-              date DATE,
-              workout_duration INTEGER,
-              goal VARCHAR
-          )
-          """
+        CREATE TABLE IF NOT EXISTS user_workouts (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        date DATE NOT NULL,
+        duration INTEGER NOT NULL,
+        goal VARCHAR NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        );
+        """
         )
-        conn.commit()
 
     @classmethod
     def drop_table(cls, conn, cursor):
-        cursor.execute("DROP TABLE IF EXISTS workouts")
+        cursor.execute("DROP TABLE IF EXISTS user_workouts")
         conn.commit()
 
     @classmethod
@@ -124,59 +126,83 @@ class Workout:
 
     @classmethod
     def instance_from_db(cls, id):
-        CURSOR.execute("SELECT * FROM workouts WHERE id=?", (id,))
+        CURSOR.execute("SELECT * FROM user_workouts WHERE id=?", (id,))
         workout = CURSOR.fetchone()
         return cls(*workout) if workout else None
 
     @classmethod
     def get_all(cls, username):
-        CURSOR.execute("SELECT * FROM workouts")
-        workouts = CURSOR.fetchall()
-        return [cls(*workout) for workout in workouts if workout[1] == username]
+        CURSOR.execute(
+            """
+            SELECT user_workouts.id, users.username, user_workouts.date, user_workouts.duration, user_workouts.goal
+            FROM user_workouts
+            JOIN users ON user_workouts.user_id = users.id
+            WHERE users.username = ?
+            """,
+            (username,),
+        )
+        user_workouts = CURSOR.fetchall()
+        workouts = []
+
+        for workout in user_workouts:
+            try:
+                # Make sure the parameters match the constructor's expected order
+                workout_id, username, date, duration, goal = workout
+                workout_instance = cls(
+                    username=username,
+                    id=workout_id,
+                    date=date,
+                    workout_duration=duration,
+                    goal=goal,
+                )
+                workouts.append(workout_instance)
+            except TypeError as e:
+                print(f"Skipping workout with invalid data: {workout}, error: {e}")
+
+        return workouts
 
     @classmethod
     def find_by_id(cls, id):
-        CURSOR.execute("SELECT * FROM workouts WHERE id=?", (id,))
+        CURSOR.execute("SELECT * FROM user_workouts WHERE id=?", (id,))
         record = CURSOR.fetchone()
         return cls(*record) if record else None
 
-
-def save(self):
-    try:
-        if self.id is None:
-            # Insert a new workout record
-            CURSOR.execute(
-                """
-                INSERT INTO workouts (username, date, workout_duration, goal)
-                VALUES (?, ?, ?, ?)
-                """,
-                (self.username, self.date, self.workout_duration, self.goal),
-            )
-            CONN.commit()
-            self.id = CURSOR.lastrowid
-            self.__class__.all[
-                self.id
-            ] = self  # Assuming you maintain a class-level dictionary for all instances
-        else:
-            # Update an existing workout record
-            self.update(self.username, self.date, self.workout_duration, self.goal)
-    except sqlite3.Error as database_error:
-        print(f"An error occurred while saving the workout: {database_error}")
-
-    def update(self, username, date, workout_duration, goal):
-        if not username or not date or not workout_duration or not goal:
-            raise ValueError("All fields cannot be empty.")
-        self.username = username
-        self.date = date
-        self.workout_duration = workout_duration
-        self.goal = goal
-        CURSOR.execute(
-            "UPDATE workouts SET username=?, date=?, workout_duration=?, goal=? WHERE id=?",
-            (self.username, self.date, self.workout_duration, self.goal, self.id),
-        )
-        CONN.commit()
+    def save(self):
+        try:
+            if self.id is None:
+                CURSOR.execute(
+                    """
+                        INSERT INTO user_workouts (user_id, date, duration, goal)
+                        VALUES ((SELECT id FROM users WHERE username = ?), ?, ?, ?)
+                        """,
+                    (self.username, self.date, self.workout_duration, self.goal),
+                )
+                CONN.commit()
+                self.id = CURSOR.lastrowid
+                self.__class__.all[self.id] = self
+            else:
+                # If the workout already has an ID, update the record
+                CURSOR.execute(
+                    """
+                        UPDATE user_workouts SET date=?, duration=?, goal=? WHERE id=?
+                        """,
+                    (self.date, self.workout_duration, self.goal, self.id),
+                )
+                CONN.commit()
+        except sqlite3.Error as database_error:
+            print(f"An error occurred while saving the workout: {database_error}")
 
     def delete(self):
-        CURSOR.execute("DELETE FROM workouts WHERE id=?", (self.id,))
-        CONN.commit()
-        del self.__class__.all[self.id]
+        try:
+            # First delete the associated exercises from workout_exercises
+            CURSOR.execute(
+                "DELETE FROM workout_exercises WHERE workout_id=?", (self.id,)
+            )
+
+            # Then delete the workout itself from user_workouts
+            CURSOR.execute("DELETE FROM user_workouts WHERE id=?", (self.id,))
+
+            CONN.commit()
+            del self.__class__.all[self.id]
+        except sqlite3.Error as database_error:
+            print(f"An error occurred while deleting the workout: {database_error}")
