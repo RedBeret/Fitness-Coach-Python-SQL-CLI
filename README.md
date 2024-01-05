@@ -2,17 +2,17 @@
 
 ## Introduction
 
-The Python CLI Bodyweight Fitness is a command-line interface application designed to assist users in creating customized workout routines based on their fitness goals, available time, and preferred workout types. It provides features such as generating workout plans, randomizing exercises for variety, tracking workout history, and more.
+The Python CLI Bodyweight Fitness is a command-line interface application designed to assist users in generating workout routines quickly and easily, based on their available time and muscle groups they want to exercise. It provides features such as generating workout plans, randomizing exercises for variety, storing workouts for later reference, and more.
 
 ## Core Requirements and Fitness Application Alignment
 
 ### Python CLI Application
 
-- This application is a Command Line Interface (CLI) program, allowing users to interact via the command line. It provides clear instructions and prompts for user-friendly interactions.
+- This application is a Command Line Interface (CLI) program, allowing users to interact via the command line. It provides clear instructions and prompts for user-friendly interactions across a variety of potential user activities.
 
 ### ORM with at Least Two Model Classes
 
-- The application implements model classes, including User and Workout, to represent entities within the fitness application. These classes are mapped to a database table.
+- The application implements model classes, including User, Exercise, and Workout, to represent entities within the fitness application. These classes are mapped to a database table.
 
 ### One-to-Many Relationship
 
@@ -41,7 +41,6 @@ The Python CLI Bodyweight Fitness is a command-line interface application design
 ### Project Structure and Documentation
 
 - The project maintains a clean and well-organized structure, including a README.md file with detailed instructions on how to set up and use the application.
-
 
 ## Getting Started
 
@@ -73,12 +72,25 @@ The project is organized as follows:
 
 ```
 python-cli-fitness-coach/
-│
+│ lib
+│   data
+│       exercise_database.py
+│       seed.py
+│       workout_plans.db
+│   models
+│       __init__
+│       exercise.py
+│       user.py
+│       workout.py
+│   cli.py
+│   debug.py
+│   helpers.py
+│ .gitignore
+│ main.py
+│ Pipfile
+│ Pipfile.lock
+│ README.md
 ```
-
-## Testing
-
-Testing instructions and examples of different scenarios and edge cases can be found in the [tests](/tests) directory.
 
 ## Dependencies
 
@@ -88,5 +100,6 @@ The project relies on the following Python libraries, which are specified in the
 - `pytest`
 - `click`
 - `tabulate`
+- `rich`
 
 You can install these dependencies using Pipenv (name) or Pipenv install.
