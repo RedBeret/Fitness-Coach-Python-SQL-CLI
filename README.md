@@ -42,10 +42,6 @@ The Python CLI Bodyweight Fitness is a command-line interface application design
 
 - The project maintains a clean and well-organized structure, including a README.md file with detailed instructions on how to set up and use the application.
 
-## Getting Started
-
-To get started with the Python CLI Bodyweight Fitness Coach, follow the installation and usage instructions below.
-
 ## User Stories
 
 ### Core Deliverables
