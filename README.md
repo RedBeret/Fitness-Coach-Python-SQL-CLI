@@ -92,10 +92,6 @@ python-cli-fitness-coach/
 │ README.md
 ```
 
-## Testing
-
-Testing instructions and examples of different scenarios and edge cases can be found in the [tests](/tests) directory.
-
 ## Dependencies
 
 The project relies on the following Python libraries, which are specified in the Pipfile:
