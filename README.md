@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Python CLI Bodyweight Fitness is a command-line interface application designed to assist users in generating workout routines quickly and easily, based on their available time and muscle groups they want to exercise. It provides features such as generating workout plans, randomizing exercises for variety, storing workouts for later reference, and more.
+The Python with SQLite3 databse CLI Bodyweight Fitness is a command-line interface application designed to assist users in generating workout routines quickly and easily, based on their available time and muscle groups they want to exercise. It provides features such as generating workout plans, randomizing exercises for variety, storing workouts for later reference, and more.
 
 ## Core Requirements and Fitness Application Alignment
 
