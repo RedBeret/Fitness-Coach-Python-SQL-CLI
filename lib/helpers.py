@@ -198,48 +198,6 @@ def display_workout_plan(workout_plan):
     print(tabulate(table_data, headers, tablefmt="grid"))
 
 
-def generate_random_workout(duration_minutes, workout_type):
-    CURSOR.execute("SELECT * FROM exercises WHERE muscle_group = ?", (workout_type,))
-    exercises = [Exercise(*row) for row in CURSOR.fetchall()]
-
-    if not exercises:
-        print(f"No exercises found for {workout_type} workout.")
-        return None
-
-    workout_plan = []
-    current_duration = 0
-
-    while current_duration < duration_minutes:
-        # Filter exercises that can fit in the remaining duration
-        available_exercises = [
-            exercise
-            for exercise in exercises
-            if exercise.duration_minutes <= (duration_minutes - current_duration)
-        ]
-        if not available_exercises:
-            break
-
-        exercise = random.choice(available_exercises)
-        exercise_duration = exercise.duration_minutes
-        workout_plan.append(
-            {
-                "Exercise Name": exercise.name,
-                "Sets": exercise.sets,
-                "Reps": exercise.reps_per_set,
-                "Duration (Min)": exercise_duration,
-            }
-        )
-        current_duration += exercise_duration
-
-    if current_duration < duration_minutes:
-        print(
-            f"Unable to generate a workout plan for the specified duration. Duration exceeded."
-        )
-        return None
-
-    return workout_plan
-
-
 def exit_program():
     print("Goodbye!")
     exit()

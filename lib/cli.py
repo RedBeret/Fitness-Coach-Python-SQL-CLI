@@ -1,7 +1,8 @@
 # lib/cli.py
 
+import random
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 
 from tabulate import tabulate
 
@@ -17,7 +18,6 @@ from .helpers import (  # create_workout,; delete_workout,; list_workouts,
     display_workout_details,
     display_workout_plan,
     exit_program,
-    generate_random_workout,
     get_duration_minutes,
     get_valid_input,
     get_workout_type,
@@ -292,25 +292,56 @@ def quick_start_workout(current_user):
     workout_type = get_workout_type()  # This can be any string chosen by the user
     duration_minutes = get_duration_minutes()
 
-    workout_plan = generate_random_workout(workout_type, duration_minutes)
+    # Generate the workout plan
+    workout_plan = generate_random_workout(duration_minutes, workout_type)
     if workout_plan:
         display_workout_plan(workout_plan)
-
-        current_date = datetime.today().strftime("%Y-%m-%d")
-        try:
-            workout_instance = Workout.create(
-                username=current_user.username,
-                date=current_date,  # Make sure the date is passed here
-                workout_duration=duration_minutes,
-                goal=workout_type,
-            )
-            print("Workout saved successfully.")
-        except Exception as e:
-            print(f"Error saving workout: {e}")
     else:
         print("Unable to generate a workout plan for the specified duration.")
 
+    input("Press Enter to return to the main menu...")
     main_menu(current_user)
+
+
+def generate_random_workout(duration_minutes, workout_type):
+    CURSOR.execute("SELECT * FROM exercises WHERE muscle_group = ?", (workout_type,))
+    exercises = [Exercise(*row) for row in CURSOR.fetchall()]
+
+    if not exercises:
+        print(f"No exercises found for {workout_type} workout.")
+        return None
+
+    workout_plan = []
+    current_duration = 0
+
+    while current_duration < duration_minutes:
+        # Filter exercises that can fit in the remaining duration
+        available_exercises = [
+            exercise
+            for exercise in exercises
+            if exercise.duration_minutes <= (duration_minutes - current_duration)
+        ]
+        if not available_exercises:
+            break
+
+        exercise = random.choice(available_exercises)
+        exercise_duration = exercise.duration_minutes
+        workout_plan.append(
+            {
+                "Exercise Name": exercise.name,
+                "Sets": exercise.sets,
+                "Reps": exercise.reps_per_set,
+                "Duration (Min)": exercise_duration,
+            }
+        )
+        current_duration += exercise_duration
+
+    if current_duration < duration_minutes:
+        print(
+            f"Unable to generate a workout plan for the full specified duration of {duration_minutes} minutes. Generated a plan for {current_duration} minutes instead."
+        )
+
+    return workout_plan
 
 
 if __name__ == "__main__":
