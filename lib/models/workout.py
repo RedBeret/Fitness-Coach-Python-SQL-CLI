@@ -204,3 +204,6 @@ class Workout:
         )
         CURSOR.execute("DELETE FROM user_workouts WHERE id = ?", (workout_id,))
         CONN.commit()
+
+
+# test
